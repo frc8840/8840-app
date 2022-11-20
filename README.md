@@ -1,70 +1,78 @@
-# Getting Started with Create React App
+# 8840-app
+## Made by Team 8840, Bay Robotics
+**Credits to [Jaiden Grimminck](https://github.com/JaidenAGrimminck)**
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+# Overview
 
-## Available Scripts
+This project is our team's web dashboard for the First Robotics Competition.
 
-In the project directory, you can run:
+This repository contains a react project with an autonomous robot planner, physics simulation for the compeition, and AI tools. It also contains tools ([credit to pynetworktables2js](https://github.com/robotpy/pynetworktables2js)) to communicate with NetworkTables and with our own servers running on the robot with [8840-utils](https://github.com/frc8840/).
 
-### `npm start`
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+# How to Run
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+Unfortunately, it's a bit difficult to run since we don't have a built version online, but you can run it locally. In the future we'll add an online version too, but for now you'll have to download it first.
 
-### `npm test`
+## Downloading
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+First, you'll need to download the repository. You can do this by clicking the green "Code" button and then clicking "Download ZIP". Expand the ZIP and you'll have the repository.
 
-### `npm run build`
+## Running
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+To run the project, you'll need to have [Node.js](https://nodejs.org/en/) installed. Once you have Node.js installed, open a terminal in the repository folder and run `npm install`. This will install all the dependencies. Once that's done, run `npm start` and the project will start running in your browser.
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+# How to Use
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+## Autonomous Robot Planner
 
-### `npm run eject`
+Go to `https://localhost:3000/?tab=path_planner` to open it. (Or whatever port you're running the server on instead of 3000.)
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+Once open, by hovering your mouse around the field and pressing the A key, you can add "Hard Points" and "Soft Points". The hard points are the starts and ends of the path segments/bézier curves, and the soft points are the control points of the bézier curves.
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+To see what points the robot will be at, press the G key to generate the PID points.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+To edit the timeline, press the T key. You can edit events by pressing the E key and hovering over an event. You can also add events by pressing the R key and hovering over the timeline.
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+To save the path locally, press the S key. To load a path, press the L key.
 
-## Learn More
+To generate the timeline, press the H key. To play the timeline, press the Spacebar. To restart the playback, press the K key. To go forward a bit or back a bit, use the arrow keys.
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Key List:
+- `A`: Add points
+- `G`: Generate PID points
+- `T`: Edit timeline
+- `E`: Edit event
+- `R`: Add event
+- `S`: Save path
+- `L`: Load path
+- `H`: Generate timeline
+- `Spacebar`: Play timeline
+- `K`: Restart playback
+- `Left Arrow`: Go back a bit
+- `Right Arrow`: Go forward a bit
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+## Physics Simulation
 
-### Code Splitting
+You can view it at `http://localhost:3000/`. The physics simulation is a bit buggy, but it's still pretty cool. It'll be improved in the near future to be used with AI tools, and for one of our team's goals, which is to be able to have a robot that can play a full match without human input.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+The physics simulation currently doesn't have much, but you can intereact with it using your mouse. You can use your mouse to bump into the balls and make them move around. The wall physics are a bit broken though, they will be fixed in the next few weeks though.
 
-### Analyzing the Bundle Size
+## AI Tools
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+Right now, there isn't many AI tools accessable in the front end, but you can view them at `http://localhost:3000/?tab=nn`. You can see a graph of the neural network's error, the neurons layed out, and a train button. You can see the outputs of the train button in the console (inspect element -> console).
 
-### Making a Progressive Web App
+# Contributing
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+If you want to contribute, you can fork the repository and make a pull request.
 
-### Advanced Configuration
+# License
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
-### Deployment
+# Credits
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+Thank you to the pynetworktables2js team for making the NetworkTables connection code. You can find their repository [here](https://github.com/robotpy/pynetworktables2js).
 
-### `npm run build` fails to minify
+# Contact
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+You can contact us [here, on our website](https://www.team8840.org/contact).
