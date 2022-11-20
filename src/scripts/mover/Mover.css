@@ -1,0 +1,8 @@
+.mover {
+    background-color: #000;
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-left: 5px;
+    cursor:move;
+}

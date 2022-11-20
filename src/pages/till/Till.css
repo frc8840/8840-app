@@ -1,0 +1,26 @@
+
+.topbar {
+    position: fixed;
+    width: 100%;
+    top: 0;
+    left: 0;
+    background-color: #151515;
+    height: 50px;
+}
+
+.topbar > p {
+    margin-left: 10px;
+    font-size: 30px;
+    position: fixed;
+    top: -22px;
+    left: 10px;
+    color: #ffffff;
+}
+
+.sidebar {
+    position: fixed;
+    height: calc(100vh - 50px);
+    width: 250px;
+    background-color: #444444;
+    top: 50px;
+}

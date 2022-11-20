@@ -1,0 +1,3 @@
+This folder has been modified to suit the needs of this repository. Credit to https://github.com/robotpy/pynetworktables2js
+
+Note: This may be removed from future versions of this repository, and replaced with a system without a middleman server.
