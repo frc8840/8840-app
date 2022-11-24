@@ -3,18 +3,11 @@ import Canvas from "../canvas/Canvas";
 import {Unit,Angle} from "../misc/unit"
 import Mover from "../mover/Mover";
 
-import PID from "../pid/PID";
-
-import circleIntersectsWithTriangle from "../misc/intersect";
-
-import fractorial from "../misc/fractorial";
-
 import { Ball, Physical } from "./PlayObj";
-
-import {dist, prettyMuchSamePoint} from "../misc/dist";
 
 import PathPlanner from "./pathplanner/PathPlanner";
 import TimelinePlanner from "./pathplanner/TimelinePlanner";
+import AprilTagManager from "./apriltags/AprilTags";
 
 import "./Field.css"
 
@@ -326,8 +319,6 @@ class Field extends React.Component {
         //For testing
         console.log(physicalObjects)
 
-        let planning = {};
-
         //Save to state
         this.state = {
             rapidReact: {
@@ -339,44 +330,7 @@ class Field extends React.Component {
                 physicalObjects,
                 mouseBall: new Ball(0, 0, "black", rapidReact.balls.size.getcu(i2p, Unit.Type.INCHES) / 2),
             },
-            aprilTags: {
-                //Add in AprilTag storage in window.localStorage or something else.
-                tags: [
-                    {
-                        x: 0,
-                        y: 0,
-                        rotation: new Angle(0),
-                        id: 0x00000001,
-                    },
-                    {
-                        x: 0,
-                        y: 0,
-                        rotation: new Angle(0),
-                        id: 0x00000002,
-                    },
-                    {
-                        x: 0,
-                        y: 0,
-                        rotation: new Angle(0),
-                        id: 0x00000003,
-                    },
-                    {
-                        x: 0,
-                        y: 0,
-                        rotation: new Angle(0),
-                        id: 0x00000004,
-                    }
-                ],
-                editTagRotationTimestamp: Date.now(),
-                ableToEdit: true,
-                mouseInfo: {
-                    indexHeld: -1,
-                    offset: {
-                        x: 0,
-                        y: 0
-                    }
-                }
-            },
+            aprilTags: new AprilTagManager(i2p),
             robotDimensions: {
                 width: new Unit(36, Unit.Type.INCHES),
                 length: new Unit(36, Unit.Type.INCHES),
@@ -750,62 +704,11 @@ class Field extends React.Component {
     generalDraw(ctx, frameCount, rel, canvas, mouse) {
         const i2p = this.state.i2p;
     
-        let index = 0;
-        //draw april tags
-        for (let tag of this.state.aprilTags.tags) {
-            ctx.beginPath();
-            ctx.arc(tag.x, tag.y, 10, 0, 2 * Math.PI);
-            ctx.stroke();
-
-            const width = new Unit(8, Unit.Type.INCHES).getcu(i2p, Unit.Type.INCHES);
-            const height = 3;
-
-            ctx.save();
-            ctx.translate(tag.x, tag.y);
-            ctx.rotate(tag.rotation.get(Angle.Radians));
-            ctx.beginPath();
-            ctx.lineTo(width / -2, height / 2);
-            ctx.lineTo(width / -2, -height / 2);
-            ctx.lineTo(width / 2, -height / 2);
-            ctx.lineTo(width / 2, height / 2);
-            ctx.lineTo(width / -2, height / 2);
-            ctx.lineTo(-1, height / 2);
-            ctx.lineTo(-1, 20);
-            ctx.lineTo(1, 20);
-            ctx.lineTo(1, height / 2);
-            ctx.stroke();
-            ctx.restore();
-
-            if (this.state.aprilTags.mouseInfo.indexHeld < 0 && dist(tag.x, tag.y, mouse.x, mouse.y) < 10) {
-                ctx.fillStyle = "white";
-                ctx.font = "20px Arial";
-                ctx.fillText("Tag " + tag.id, 10, 50);
-                ctx.fillStyle = "white";
-
-                if (!mouse.down && (this.state.keysDown ? this.state.keysDown["e"] : false) && this.state.aprilTags.editTagRotationTimestamp < Date.now() - 200) {
-                    if (this.state.aprilTags.ableToEdit) {
-                        this.state.aprilTags.editTagRotationTimestamp = Date.now();
-                        const newAngle = prompt(`Enter new angle for tag ${tag.id} in degrees (current degrees: ${tag.rotation.get(Angle.Degrees)})`);
-                        if (newAngle != null) {
-                            tag.rotation = new Angle(parseFloat(newAngle) || 0, Angle.Degrees);
-                        }
-                        delete this.state.keysDown["e"];
-                        this.state.aprilTags.editTagRotationTimestamp = Date.now();
-                        this.state.aprilTags.ableToEdit = false;
-                    } else {
-                        this.state.aprilTags.ableToEdit = true;
-                        delete this.state.keysDown["e"];
-                    }
-                }
+        this.state.aprilTags.draw(Object.assign({
+            remove: (key) => {
+                delete this.state.keysDown[key];
             }
-
-            if (mouse.down && dist(tag.x, tag.y, mouse.x, mouse.y) < 10 && this.state.aprilTags.mouseInfo.indexHeld < 0) {
-                this.state.aprilTags.mouseInfo.indexHeld = index;
-                this.state.aprilTags.mouseInfo.offset.x = tag.x - mouse.x;
-                this.state.aprilTags.mouseInfo.offset.y = tag.y - mouse.y;
-            }
-            index++;
-        }
+        }, this.state.keysDown), ctx, mouse)
 
         if (this.state.aprilTags.mouseInfo.indexHeld >= 0) {
             if (!mouse.down || !(mouse.inCanvas)) {
@@ -817,8 +720,10 @@ class Field extends React.Component {
         }
 
         if (this.state.simulationType == Field.SimulType.Planning) {
-
             //--Path Points--
+
+            //Update events in path planner
+            this.state.planner.updateTimelineEvents(this.state.timeline.getEvents());
 
             //Check if point is being picked up
             for (let i = 0; i < this.state.planner.getPositions().length; i++) {
@@ -945,10 +850,10 @@ class Field extends React.Component {
                     const trajPath = this.state.timeline.generated;
                     
                     const indexInGeneratedTrajectory = Math.floor(this.state.playback.getTimePlaying() / (pathDeltaTime * 1000));
-                    if (indexInGeneratedTrajectory < trajPath.length) {
+                    if (indexInGeneratedTrajectory < trajPath.length) {                        
                         const currentPos = {
-                            x: trajPath[indexInGeneratedTrajectory][0].data.position.x,
-                            y: trajPath[indexInGeneratedTrajectory][0].data.position.y
+                            x: trajPath[indexInGeneratedTrajectory][0].data.position.x.getcu(i2p, Unit.Type.INCHES),
+                            y: trajPath[indexInGeneratedTrajectory][0].data.position.y.getcu(i2p, Unit.Type.INCHES)
                         }
 
                         //window["__currentPos"] = { currentPos, indexInGeneratedTrajectory, p: trajPath[indexInGeneratedTrajectory] };
@@ -962,14 +867,14 @@ class Field extends React.Component {
                         let angle = 0;
                         if (indexInGeneratedTrajectory < trajPath.length - 1) {
                             const nextPos = {
-                                x: trajPath[indexInGeneratedTrajectory + 1][0].data.position.x,
-                                y: trajPath[indexInGeneratedTrajectory + 1][0].data.position.y
+                                x: trajPath[indexInGeneratedTrajectory + 1][0].data.position.x.getcu(i2p, Unit.Type.INCHES),
+                                y: trajPath[indexInGeneratedTrajectory + 1][0].data.position.y.getcu(i2p, Unit.Type.INCHES)
                             }
                             angle = Math.atan2(nextPos.y - currentPos.y, nextPos.x - currentPos.x);
                         } else {
                             const prevPos = {
-                                x: trajPath[indexInGeneratedTrajectory - 1][0].data.position.x,
-                                y: trajPath[indexInGeneratedTrajectory - 1][0].data.position.y
+                                x: trajPath[indexInGeneratedTrajectory - 1][0].data.position.x.getcu(i2p, Unit.Type.INCHES),
+                                y: trajPath[indexInGeneratedTrajectory - 1][0].data.position.y.getcu(i2p, Unit.Type.INCHES)
                             }
                             angle = Math.atan2(currentPos.y - prevPos.y, currentPos.x - prevPos.x);
                         }
@@ -1060,7 +965,14 @@ class Field extends React.Component {
     keyDown(e) {
         const lk = e.key.toLowerCase();
 
+        if (this.state.keysDown["meta"]) {
+            return;
+        }
+        
         const sk = () => {
+            e.preventDefault();
+            e.stopPropagation();
+            
             let currentKeyDown = Object.assign({}, this.state.keysDown);
             currentKeyDown[lk] = true;
             this.setState({
@@ -1091,7 +1003,7 @@ class Field extends React.Component {
             //this.state.playback.t = Math.min(this.state.playback.t, this.state.playback.maxT);
         } else if (lk == "arrowleft" && !this.state.keysDown[lk]) { //go frame back in playback
             this.state.playback.accumPause += 100;
-            const maxTime = this.state.timeline.events.filter(event => event.type == Field.TimelineEvent.GeneralTime)[0].end * 1000;
+            const maxTime = this.state.timeline.getEvents().filter(event => event.type == Field.TimelineEvent.GeneralTime)[0].end * 1000;
             if (this.state.playback.getTimePlaying() > maxTime) {
                 this.state.playback.accumPause -= (Math.abs(this.state.playback.getTimePlaying()) - maxTime);
             }
@@ -1124,6 +1036,10 @@ class Field extends React.Component {
         } else if (lk == "h" && !this.state.keysDown[lk]) {
             const newTimeline = this.state.planner.generateTimeline([], 0);
             this.state.timeline.generated = newTimeline;
+        } else if (lk == "p" && !this.state.keysDown[lk]) {
+            alert("Sending once this message is closed.")
+            console.log("Sending path to robot...")
+            this.state.planner.sendPathToRobot();
         }
 
         sk();

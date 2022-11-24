@@ -15,6 +15,10 @@ class Hosting extends React.Component {
         }
         this.connectAndUpdateStatus = this.connectAndUpdateStatus.bind(this);
         this.updateEmoji = this.updateEmoji.bind(this);
+
+        window.getRobotServerURL = () => {
+            return "http://" + window.nt.host + ":" + window.nt.port;
+        }
     }
 
     componentDidMount() {

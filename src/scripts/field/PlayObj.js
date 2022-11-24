@@ -285,37 +285,37 @@ class Ball extends Physical {
         if (!dontMove) {
             if (doBounceOffWall) {
                 let side = closestObj.checkCollision(this, true).between;
-                const angleOfWall = Angle.normalize(closestObj.angleOfWall(side > 0 ? 1 : 0));
+                let angleOfWall = closestObj.angleOfWall(side > 0 ? 1 : 0).get(Angle.Radians) % (2 * Math.PI);
 
-                const angleOfBall = Angle.normalize(new Angle(this.pos.dir + Math.PI, Angle.Radians));
+                let angleOfBall = this.pos.dir % (2 * Math.PI);
 
-                const difference = Angle.normalize(new Angle(angleOfWall.get(Angle.Radians) - angleOfBall.get(Angle.Radians), Angle.Radians));
+                if (angleOfWall < 0) {
+                    angleOfWall += 2 * Math.PI;
+                }
 
-                //this.pos.dir += angleOfWall.get(Angle.Radians) + difference.get(Angle.Radians);
-                this.pos.dir += Math.PI + (Math.PI - (difference.get(Angle.Radians) * 2));
-                // if (side == 0) {
-                //     let lowerBound = angleOfWall.get(Angle.Radians);
-                //     let upperBound = angleOfWall.get(Angle.Radians) + Math.PI;
+                while (angleOfWall > Math.PI) {
+                    angleOfWall -= Math.PI;
+                }
+                
 
-                //     let top = angleOfBall > lowerBound && angleOfBall < upperBound;
+                if (angleOfBall < 0) {
+                    angleOfBall += 2 * Math.PI;
+                }
 
-                //     const normalized = Math.abs(angleOfWall.get(Angle.Radians) - angleOfBall.get(Angle.Radians));
+                let lowerBound = angleOfWall;
+                let upperBound = angleOfWall + Math.PI;
 
-                //     console.log(normalized, top, angleOfWall, angleOfBall)
+                const inBound = (angleOfBall > lowerBound && angleOfBall < upperBound) || (angleOfBall > lowerBound - (2*Math.PI) && angleOfBall < upperBound - (2*Math.PI));
 
-                //     this.pos.dir = normalized - angleOfWall.get(Angle.Radians)
-                // } else if (side == 1) {
-                //     let lowerBound = angleOfWall.get(Angle.Radians) - Math.PI;
-                //     let upperBound = angleOfWall.get(Angle.Radians);
+                let difference = Math.abs((angleOfBall - Math.PI) - ((angleOfWall < (angleOfBall - Math.PI) && !inBound) ? angleOfWall + (2*Math.PI) : angleOfWall));
 
-                //     let top = angleOfBall > lowerBound && angleOfBall < upperBound;
+                const angle = Math.PI + difference;
 
-                //     const normalized = Math.abs(angleOfWall.get(Angle.Radians) - angleOfBall.get(Angle.Radians));
+                const newBallAngle = angle + angleOfWall;
 
-                //     console.log(normalized, top, angleOfWall, angleOfBall)
+                console.log(angleOfBall, angleOfWall, newBallAngle);
 
-                //     this.pos.dir = normalized + angleOfWall.get(Angle.Radians)
-                // }
+                this.pos.dir = newBallAngle;
             }
 
             this.pos.x += this.pos.vel * Math.cos(this.pos.dir);

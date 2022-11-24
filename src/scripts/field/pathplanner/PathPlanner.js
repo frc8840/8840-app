@@ -77,6 +77,60 @@ class PathPlanner {
         this.state.timeline.events.push(event);
     }
 
+    sendPathToRobot() {
+        const url = window.getRobotServerURL() + "/auto_path";
+
+        const translatedGeneratedTime = this.state.timeline.generated.map((timepoint) => {
+            const newTimepoint = timepoint.map(event => {
+                const copy = Object.assign({}, event);
+                let copiedAlready = false;
+                if (Object.keys(event.data).includes("x") && Object.keys(event.data).includes("y")) {
+                    const dataCopy = Object.assign({}, event.data);
+                    copy.data = dataCopy;
+                    copy.data.x = event.data.x.get(Unit.Type.INCHES);
+                    copy.data.y = event.data.y.get(Unit.Type.INCHES);
+                    copiedAlready = true;
+                }
+                if (Object.keys(event.data).includes("position")) {
+                    const dataCopy = Object.assign({}, event.data);
+                    copy.data = dataCopy;
+                    const copyPosition = Object.assign({}, event.data.position);
+                    copy.data.position = copyPosition;
+                    copy.data.position.x = event.data.position.x.get(Unit.Type.INCHES);
+                    copy.data.position.y = event.data.position.y.get(Unit.Type.INCHES);
+                    copiedAlready = true;
+                }
+                if (Object.keys(event.data).includes("angle")) {
+                    if (event.data.angle instanceof Angle) {
+                        const dataCopy = copiedAlready ? Object.assign({}, copy.data) : Object.assign({}, event.data);
+                        copy.data = dataCopy;
+                        copy.data.angle = event.data.angle.get(Angle.Radians);
+                    }
+                }
+                return copy;
+            })
+
+            return newTimepoint;
+        });
+
+        const data = {
+            positions: this.state.positions,
+            trajectorySettings: this.state.trajectorySettings,
+            timelineEvents: this.state.timeline.events,
+            generatedTimeline: translatedGeneratedTime,
+        };
+
+        fetch(url, {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json",
+            },
+            body: JSON.stringify(data),
+        }).then((res) => res.json()).then(data => {
+            console.log(data);
+        })
+    }
+
     generateBezierCurve(options={
         der: false, 
         distBetweenPoints: -1, //-1 for none, >0 for distance between points.
@@ -739,44 +793,63 @@ class PathPlanner {
         let driving = false;
         let drivingPoints = 0;
         
-        let lastPoint = currentPoint;
+        let lastPoint = {
+            x: new Unit(currentPoint.x / i2p, Unit.Type.INCHES),
+            y: new Unit(currentPoint.y / i2p, Unit.Type.INCHES),
+        };
 
         for (let t = 0; t <= this.state.trajectorySettings.time; t += deltaTime) {
             const currentEvents = this.state.timeline.events.filter(event => (event.start <= t && event.end >= t));
             const drivingStateChanged = driving == isDriving(currentEvents);
             driving = isDriving(currentEvents);
-
-            timeline.push([
-                {
-                    type: FieldTypes.Timeline.GeneralTime,
-                    time: t,
-                    data: {
+            if (typeof lastPoint.x == "object") {
+                timeline.push([
+                    {
+                        type: FieldTypes.Timeline.GeneralTime,
                         time: t,
-                        driving,
-                        position: {
-                            x: lastPoint.x,
-                            y: lastPoint.y,
+                        data: {
+                            time: t,
+                            driving,
+                            position: {
+                                x: new Unit(lastPoint.x.get(Unit.Type.INCHES) + 1 - 1, Unit.Type.INCHES),
+                                y: new Unit(lastPoint.y.get(Unit.Type.INCHES) + 1 - 1, Unit.Type.INCHES),
+                            }
                         }
                     }
-                }
-            ]);
+                ]);
+            } else {
+                timeline.push([
+                    {
+                        type: FieldTypes.Timeline.GeneralTime,
+                        time: t,
+                        data: {
+                            time: t,
+                            driving,
+                            position: {
+                                x: new Unit(lastPoint.x / i2p + 1 - 1, Unit.Type.INCHES),
+                                y: new Unit(lastPoint.y / i2p + 1 - 1, Unit.Type.INCHES),
+                            }
+                        }
+                    }
+                ]);
+            }
 
             if (drivingStateChanged) {
                 if (driving && drivingPoints < path.length) {
                     const newCurrentPoint = path[drivingPoints];
 
                     timeline[timeline.length - 1][0].data.position = {
-                        x: newCurrentPoint.x,
-                        y: newCurrentPoint.y,
+                        x: new Unit(newCurrentPoint.x / i2p, Unit.Type.INCHES),
+                        y: new Unit(newCurrentPoint.y / i2p, Unit.Type.INCHES),
                     }
 
                     //start driving
                     timeline[timeline.length - 1].push({
-                        type: FieldTypes.Simulation.Drive,
+                        type: FieldTypes.Timeline.Drive,
                         time: t,
                         data: {
-                            x: newCurrentPoint.x,
-                            y: newCurrentPoint.y,
+                            x: new Unit(newCurrentPoint.x / i2p, Unit.Type.INCHES),
+                            y: new Unit(newCurrentPoint.y / i2p, Unit.Type.INCHES),
                             velocity: dist(lastPoint.x, lastPoint.y, newCurrentPoint.x, newCurrentPoint.y) / i2p / deltaTime,
                             angle: new Angle(Math.atan2(newCurrentPoint.y - lastPoint.y, newCurrentPoint.y - lastPoint.y), Angle.Radians),
                         }

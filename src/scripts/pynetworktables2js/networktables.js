@@ -717,6 +717,7 @@ const NetworkTables = new function() {
 
 		try {
 			if (Object.keys(window).includes("pause")) if (window.pause) throw "paused";
+			if (Object.keys(window).includes("pausent")) if (window.pausent) throw "paused";
 			console.log("Attempting to create NT Socket at ", address);
 			socket = new WebSocket(address);
 		} catch (e) {
