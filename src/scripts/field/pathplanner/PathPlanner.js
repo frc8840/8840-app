@@ -118,6 +118,7 @@ class PathPlanner {
             trajectorySettings: this.state.trajectorySettings,
             timelineEvents: this.state.timeline.events,
             generatedTimeline: translatedGeneratedTime,
+            name: Object.keys(window).includes("lastLoadedFile") ? window.lastLoadedFile + "-" + Date.now() : "unnamed-" + Date.now(),
         };
 
         fetch(url, {

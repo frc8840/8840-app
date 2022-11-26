@@ -10,6 +10,7 @@ import SpeedCC from "../speed-controllers/SpeedCC";
 import "./Home.css"
 import Field from "../../scripts/field/Field";
 import Till from "../till/Till";
+import PathSelector from "../../scripts/field/pathplanner/selector/PathSelector";
 
 function Home() {
     const [params, setSearchParams] = useSearchParams();
@@ -19,6 +20,7 @@ function Home() {
             <Field></Field>
             <SpeedCC></SpeedCC>
             <SwerveInfo></SwerveInfo>
+            <PathSelector></PathSelector>
         </div>
     );
 
@@ -56,6 +58,7 @@ function Home() {
         tab = (
             <div>
                 <Field inchToPixel={1.5} simtype={Field.SimulType.Planning}></Field>
+                <PathSelector></PathSelector>
             </div>
         )
     } else if (params.get("tab") === "till") {

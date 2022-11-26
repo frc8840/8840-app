@@ -532,6 +532,8 @@ class Field extends React.Component {
                         distBetweenPoints: baseDistanceBetweenPoints
                     })
                 });
+
+                window.lastLoadedFile = pathName;
             }
         }
     }
