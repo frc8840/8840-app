@@ -40,7 +40,7 @@ class SwerveInfo extends React.Component {
             const modNum = splitKey[1];
 
             //Used for replacing
-            const initialBit = splitKey[0] + "_" + splitKey[1] + "_";
+            const initialBit = splitKey[0] + "_" + splitKey[1] + "/";
             
             //Get the module data key
             const variable = key.replace(initialBit, "")

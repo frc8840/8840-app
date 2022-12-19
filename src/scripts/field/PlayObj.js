@@ -284,6 +284,11 @@ class Ball extends Physical {
         
         if (!dontMove) {
             if (doBounceOffWall) {
+                //Do not dare touch this.
+                //I have no freaking clue how this works. It just does
+                //It probably can be simplified like crazy, or someone has like a better way to do this
+                //I spent literally a month on this. This by far was like one of the hardest features.
+                //So don't mess with it. Please. I beg you. DO. NOT. TOUCH.
                 let side = closestObj.checkCollision(this, true).between;
                 let angleOfWall = closestObj.angleOfWall(side > 0 ? 1 : 0).get(Angle.Radians) % (2 * Math.PI);
 
@@ -312,8 +317,6 @@ class Ball extends Physical {
                 const angle = Math.PI + difference;
 
                 const newBallAngle = angle + angleOfWall;
-
-                console.log(angleOfBall, angleOfWall, newBallAngle);
 
                 this.pos.dir = newBallAngle;
             }

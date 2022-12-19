@@ -10,12 +10,16 @@ import TimelinePlanner from "./pathplanner/TimelinePlanner";
 import AprilTagManager from "./apriltags/AprilTags";
 
 import "./Field.css"
+import dist from "../misc/dist";
+import PositionEvent from "./pathplanner/PositionEvent";
 
 const degreeDifference = 15;
 
 const pathDeltaTime = 0.03125;
 
 const baseDistanceBetweenPoints = 3;
+
+const positionEventEditDistance = 10;
 
 /*
        @---------------------\
@@ -396,12 +400,19 @@ class Field extends React.Component {
                 generatedPath: true,
                 pathPoints: true,
                 pathAsPoints: false,
-                timeline: false
+                timeline: false,
+                positionEvents: true
             },
 
             timeline: new TimelinePlanner(rapidReact.autonomousLength),
 
             generatedPath: [],
+
+            closestPointToPathFromMouse: {x: 0, y: 0, indexOnPath: 0, highestIndex: 0},
+            closestPosEventToMouse: {x: 0, y: 0},
+
+            positionEvents: [],
+            transformMenuToPositionEventEditor: false,
 
             playback: {
                 playing: false,
@@ -414,7 +425,8 @@ class Field extends React.Component {
 
                 robot: {
                     x: 0,
-                    y: 0
+                    y: 0,
+                    lastAngle: 0
                 }
             },
 
@@ -426,6 +438,25 @@ class Field extends React.Component {
             },
             planningMenuOptions: [
                 {
+                    name: 'Create Position Event',
+                    action: () => {
+                        this.state.positionEvents.push(
+                            new PositionEvent(
+                                this.state.closestPointToPathFromMouse.x,
+                                this.state.closestPointToPathFromMouse.y,
+                                PositionEvent.Type.Rotation, 
+                                {},
+                                this.state.closestPointToPathFromMouse.indexOnPath / this.state.closestPointToPathFromMouse.highestIndex
+                            )
+                        )
+                        this.state.planner.updatePositionEvents(this.state.positionEvents)
+                    },
+                    renderCondition: () => {
+                        if (this.state.transformMenuToPositionEventEditor) return false;
+                        return this.state.generatedPath.length > 0;
+                    }
+                },
+                {
                     name: "Create Hard Point",
                     action: (x, y) => {
                         this.state.planner.addPosition({
@@ -434,7 +465,8 @@ class Field extends React.Component {
                             type: Field.PointType.Hard
                         });
                     },
-                    renderCondition() {
+                    renderCondition: () => {
+                        if (this.state.transformMenuToPositionEventEditor) return false;
                         return true;
                     }
                 },
@@ -448,6 +480,7 @@ class Field extends React.Component {
                         });
                     },
                     renderCondition: () => {
+                        if (this.state.transformMenuToPositionEventEditor) return false;
                         return this.state.planner.getPositions().length > 0;
                     }
                 },
@@ -457,6 +490,7 @@ class Field extends React.Component {
                         this.state.show.pathPoints = false;
                     },
                     renderCondition: () => {
+                        if (this.state.transformMenuToPositionEventEditor) return false;
                         return this.state.show.pathPoints;
                     }
                 },
@@ -466,6 +500,7 @@ class Field extends React.Component {
                         this.state.show.pathPoints = true;
                     },
                     renderCondition: () => {
+                        if (this.state.transformMenuToPositionEventEditor) return false;
                         return !this.state.show.pathPoints;
                     }
                 },
@@ -475,6 +510,7 @@ class Field extends React.Component {
                         this.state.show.generatedPath = false;
                     },
                     renderCondition: () => {
+                        if (this.state.transformMenuToPositionEventEditor) return false;
                         return this.state.show.generatedPath;
                     }
                 },
@@ -484,10 +520,145 @@ class Field extends React.Component {
                         this.state.show.generatedPath = true;
                     },
                     renderCondition: () => {
+                        if (this.state.transformMenuToPositionEventEditor) return false;
                         return !this.state.show.generatedPath;
                     }
                 },
+                {
+                    name: 'Show Position Events',
+                    action: () => {
+                        this.state.show.positionEvents = true;
+                    },
+                    renderCondition: () => {
+                        if (this.state.transformMenuToPositionEventEditor) return false;
+                        return this.state.positionEvents.length > 0 && !this.state.show.positionEvents;
+                    }
+                },
+                {
+                    name: 'Hide Position Events',
+                    action: () => {
+                        this.state.show.positionEvents = false;
+                    },
+                    renderCondition: () => {
+                        if (this.state.transformMenuToPositionEventEditor) return false;
+                        return this.state.positionEvents.length > 0 && this.state.show.positionEvents;
+                    }
+                },
+                {
+                    name: 'Change type',
+                    action: () => {
+                        delete this.state.keysDown["a"];
+                        const newType = prompt("What's the new type? Types: " + Object.keys(PositionEvent.Type).join(", "));
+                        if (newType) {
+                            let currentEditing = -1;
+                            for (let i = 0; i < this.state.positionEvents.length; i++) {
+                                if (
+                                    dist(
+                                    this.state.positionEvents[i].x, 
+                                    this.state.positionEvents[i].y, 
+                                    this.state.closestPosEventToMouse.x, 
+                                    this.state.closestPosEventToMouse.y) < 1
+                                ) {
+                                    currentEditing = Number(i);
+                                }
+                            }
+
+                            if (Object.keys(PositionEvent.Type).includes(newType)) {
+                                if (currentEditing > -1) {
+                                    this.state.positionEvents[currentEditing].type = PositionEvent.Type[newType];
+                                } else {
+                                    alert("An error occurred, couldn't find what was being edited.")
+                                }
+                            } else {
+                                alert("Not correct type.")
+                            }
+                        }
+
+                        this.state.planner.updatePositionEvents(this.state.positionEvents)
+                    },
+                    renderCondition: () => {
+                        if (!this.state.transformMenuToPositionEventEditor) return false;
+                        return true;
+                    }
+                },
+                {
+                    name: 'Edit primary value',
+                    action: () => {
+                        delete this.state.keysDown["a"];
+
+                        let currentEditing = -1;
+                        for (let i = 0; i < this.state.positionEvents.length; i++) {
+                            if (
+                                dist(
+                                this.state.positionEvents[i].x, 
+                                this.state.positionEvents[i].y, 
+                                this.state.closestPosEventToMouse.x, 
+                                this.state.closestPosEventToMouse.y) < 1
+                            ) {
+                                currentEditing = Number(i);
+                            }
+                        }
+
+                        if (currentEditing == -1) {
+                            alert("An error occured an the position being edited wasn't found.")
+                            return;
+                        }
+
+                        const editingType = this.state.positionEvents[currentEditing].type;
+
+                        const editing = PositionEvent.PrimaryValueNameStorage[editingType];
+
+                        const newValue = prompt("What's the new " + editing + " value?");
+                        if (newValue) {
+                            const numberOfValue = Number(newValue);
+
+                            if (isNaN(numberOfValue) || numberOfValue == null) {
+                                alert("The number provided was not able to be transformed into a number.")
+                                return;
+                            }
+
+                            const transformed = PositionEvent.PrimaryValueProcess[editingType](numberOfValue);
+
+                            this.state.positionEvents[currentEditing].data[editing] = transformed;
+                        }
+
+                        this.state.planner.updatePositionEvents(this.state.positionEvents)
+                    },
+                    renderCondition: () => {
+                        if (!this.state.transformMenuToPositionEventEditor) return false;
+                        return true;
+                    }
+                },
+                {
+                    name: 'Delete position event',
+                    action: () => {
+                        let indexToBeDeleted = -1;
+                        for (let i = 0; i < this.state.positionEvents.length; i++) {
+                            if (
+                                dist(
+                                this.state.positionEvents[i].x, 
+                                this.state.positionEvents[i].y, 
+                                this.state.closestPosEventToMouse.x, 
+                                this.state.closestPosEventToMouse.y) < 1
+                            ) {
+                                indexToBeDeleted = Number(i);
+                            }
+                        }
+
+                        if (indexToBeDeleted > -1) {
+                            this.state.positionEvents.splice(indexToBeDeleted, 1)
+                        }
+
+                        this.state.planner.updatePositionEvents(this.state.positionEvents)
+                    },
+                    renderCondition: () => {
+                        if (!this.state.transformMenuToPositionEventEditor) return false;
+                        return true;
+                    }
+                }
             ],
+
+            mouse: {x: 0, y: 0}
         }
 
         if (simulationType == Field.SimulType.Planning) { 
@@ -539,6 +710,12 @@ class Field extends React.Component {
     }
 
     togglePlanningMenu(open=!this.state.planningMenu) {
+        if (dist(this.state.mouse.x, this.state.mouse.y, this.state.closestPosEventToMouse.x, this.state.closestPosEventToMouse.y) < positionEventEditDistance && open) {
+            this.state.transformMenuToPositionEventEditor = true;
+        } else {
+            this.state.transformMenuToPositionEventEditor = false;
+        }
+
         this.setState({
             planningMenu: open,
             planningMenuJustOpened: true
@@ -703,6 +880,8 @@ class Field extends React.Component {
         ctx.font = "20px Arial";
         ctx.fillText(`x: ${mouse.x}, y: ${mouse.y}`, 10, 20);
     }
+
+
     generalDraw(ctx, frameCount, rel, canvas, mouse) {
         const i2p = this.state.i2p;
     
@@ -743,6 +922,10 @@ class Field extends React.Component {
                 const height = rapidReact.field.height.fullMeasure.getcu(i2p, Unit.Type.INCHES);
 
                 if (!mouse.down) {
+                    //Delete point
+
+                    let deletedPoint = false;
+
                     const currentPickedPos = this.state.planner.getPositions()[this.state.mousePickedUp];
                     if (currentPickedPos.x > 10 && 
                         currentPickedPos.x < height * 0.1 && 
@@ -754,6 +937,18 @@ class Field extends React.Component {
                         if (this.state.planner.getPositions().length == 1 && this.state.planner.getPositions()[0].type == Field.PointType.Soft) {
                             this.state.planner.getPositions()[0].type = Field.PointType.Hard;
                         }
+
+                        //Remove position events
+                        //TODO: fix this in the future, it works ok without it though so we're good
+                        // if (this.state.planner.getPositions().length <= 1) {
+                        //     this.state.positionEvents = [];
+                        // } else { //or readjust their references
+                        //     for (let posEvent of this.state.positionEvents) {
+                        //         posEvent.readjustReference(this.state.generatedPath);
+                        //     }
+                        // }
+
+                        deletedPoint = true;
                     }
 
                     this.state.mousePickedUp = -1;
@@ -761,6 +956,15 @@ class Field extends React.Component {
                     this.state.generatedPath = this.state.planner.generateBezierCurve({
                         distBetweenPoints: baseDistanceBetweenPoints
                     });
+
+                    //TODO: Same w/ this, need to fix it in the future but it still works fine
+                    //I can still adjust points and stuff, but it may cause some issues.
+                    // if (!deletedPoint) {
+                    //     for (let posEvent of this.state.positionEvents) {
+                    //         posEvent.readjustPosition(this.state.generatedPath);
+                    //     }
+                    // }
+
                     //console.log(this.state.planner.generateBezierCurve.bind(this)())
                 } else {
                     ctx.fillStyle = "red";
@@ -830,6 +1034,81 @@ class Field extends React.Component {
                         }
                     }
                 }
+                
+                if (this.state.show.positionEvents && this.state.generatedPath.length > 0) {
+                    //Find the closest point to the mouse onthe path.
+                    let closestPointToMouse = {x: -100, y: -100, distanceOnPath: -1}
+                    let closestDistance = 99999999;
+                    let highestIndex = 0;
+                    for (let i = 0; i < this.state.generatedPath.length; i++) {
+                        const path = this.state.generatedPath[i];
+                        for (let j = 0; j < path.length; j++) {
+                            const distToMouse = dist(path[j].x, path[j].y, mouse.x, mouse.y);
+
+                            if (distToMouse < closestDistance) {
+                                closestDistance = distToMouse;
+                                closestPointToMouse = {
+                                    x: path[j].x, 
+                                    y: path[j].y, 
+                                    indexOnPath: Number(highestIndex)
+                                }
+                            }
+
+                            highestIndex += 1;
+                        }
+                    }
+
+                    let closestPosEventToMouse = {x: -100, y: -100}
+                    let closestPosEventDistance = 99999999;
+                    let closestPosIndex = -1;
+                    for (let i = 0; i < this.state.positionEvents.length; i++) {
+                        const pos = this.state.positionEvents[i];
+                        const distToMouse = dist(pos.x, pos.y, mouse.x, mouse.y);
+                        if (distToMouse < closestPosEventDistance) {
+                            closestPosEventDistance = distToMouse;
+                            closestPosEventToMouse = {x: pos.x, y: pos.y}
+                            closestPosIndex = Math.round(i / 1);
+                        }
+                    }
+
+                    if (!this.state.planningMenu) {
+                        this.state.closestPointToPathFromMouse = Object.assign({
+                            highestIndex
+                        }, closestPointToMouse);
+                        this.state.closestPosEventToMouse = Object.assign({}, closestPosEventToMouse);
+                    }
+
+                    if (closestPosEventDistance > positionEventEditDistance && !this.state.transformMenuToPositionEventEditor) {
+                        ctx.strokeStyle = "black";
+                        ctx.beginPath();
+                        ctx.arc(this.state.closestPointToPathFromMouse.x, this.state.closestPointToPathFromMouse.y, 5, 0, 2 * Math.PI)
+                        ctx.fill();
+                        ctx.stroke();
+                    } else {
+                        ctx.strokeStyle = "red";
+                        ctx.beginPath();
+                        ctx.arc(this.state.closestPosEventToMouse.x, this.state.closestPosEventToMouse.y, 5, 0, 2 * Math.PI)
+                        ctx.fill();
+                        ctx.stroke();
+                    }
+
+                    ctx.strokeStyle = "black";
+                    
+                    for (let i = 0; i < this.state.positionEvents.length; i++) {
+                        let color = "black";
+                        if ((i == closestPosIndex && closestPosEventDistance <= positionEventEditDistance) ||
+                            (dist(
+                                this.state.positionEvents[i].x, 
+                                this.state.positionEvents[i].y, 
+                                this.state.closestPosEventToMouse.x, 
+                                this.state.closestPosEventToMouse.y) < 1 &&
+                                this.state.transformMenuToPositionEventEditor)) {
+                            color = "red";
+                        }
+
+                        this.state.positionEvents[i].draw(i2p, ctx, color);
+                    }
+                }
 
                 ctx.strokeStyle = "black";
                 ctx.lineWidth = 1;
@@ -866,22 +1145,28 @@ class Field extends React.Component {
                         ctx.fill();
                         ctx.stroke();
 
-                        let angle = 0;
-                        if (indexInGeneratedTrajectory < trajPath.length - 1) {
-                            const nextPos = {
-                                x: trajPath[indexInGeneratedTrajectory + 1][0].data.position.x.getcu(i2p, Unit.Type.INCHES),
-                                y: trajPath[indexInGeneratedTrajectory + 1][0].data.position.y.getcu(i2p, Unit.Type.INCHES)
-                            }
-                            angle = Math.atan2(nextPos.y - currentPos.y, nextPos.x - currentPos.x);
-                        } else {
-                            const prevPos = {
-                                x: trajPath[indexInGeneratedTrajectory - 1][0].data.position.x.getcu(i2p, Unit.Type.INCHES),
-                                y: trajPath[indexInGeneratedTrajectory - 1][0].data.position.y.getcu(i2p, Unit.Type.INCHES)
-                            }
-                            angle = Math.atan2(currentPos.y - prevPos.y, currentPos.x - prevPos.x);
+                        let angle = this.state.playback.robot.lastAngle;
+                        // if (indexInGeneratedTrajectory < trajPath.length - 1) {
+                        //     const nextPos = {
+                        //         x: trajPath[indexInGeneratedTrajectory + 1][0].data.position.x.getcu(i2p, Unit.Type.INCHES),
+                        //         y: trajPath[indexInGeneratedTrajectory + 1][0].data.position.y.getcu(i2p, Unit.Type.INCHES)
+                        //     }
+                        //     angle = Math.atan2(nextPos.y - currentPos.y, nextPos.x - currentPos.x);
+                        // } else {
+                        //     const prevPos = {
+                        //         x: trajPath[indexInGeneratedTrajectory - 1][0].data.position.x.getcu(i2p, Unit.Type.INCHES),
+                        //         y: trajPath[indexInGeneratedTrajectory - 1][0].data.position.y.getcu(i2p, Unit.Type.INCHES)
+                        //     }
+                        //     angle = Math.atan2(currentPos.y - prevPos.y, currentPos.x - prevPos.x);
+                        // }
+
+                        if (trajPath[indexInGeneratedTrajectory].filter(e => e.type == FieldTypes.Timeline.Drive).length > 0) {
+                            angle = trajPath[indexInGeneratedTrajectory].filter(e => e.type == FieldTypes.Timeline.Drive)[0].data.angle
                         }
 
                         this.state.robotDimensions.draw(ctx, currentPos.x, currentPos.y, new Angle(angle, Angle.Radians));
+                        
+                        this.state.playback.robot.lastAngle = angle;
 
                         ctx.strokeStyle = "rgb(220, 40, 187)";
                         ctx.lineWidth = 2;
@@ -899,6 +1184,15 @@ class Field extends React.Component {
                 }
             }
 
+            //Draw generated PID if it was generated.
+            for (let trajPathPoint of (this.state.planner.getGeneratedPIDTrajectory() || [])) {
+                ctx.fillStyle = Object.keys(trajPathPoint).includes("hard") ? "red" : "green";
+
+                ctx.beginPath();
+                ctx.arc(trajPathPoint.x, trajPathPoint.y, 5, 0, 2 * Math.PI);
+                ctx.fill();
+            }
+
             //--Timeline--
 
             //update timeline planner with how long it's been playing for
@@ -906,14 +1200,6 @@ class Field extends React.Component {
 
             if (this.state.show.timeline) {
                 this.state.timeline.draw(ctx, frameCount, rel, canvas, mouse)
-            }
-
-            for (let trajPathPoint of (this.state.planner.getGeneratedPIDTrajectory() || [])) {
-                ctx.fillStyle = Object.keys(trajPathPoint).includes("hard") ? "red" : "green";
-
-                ctx.beginPath();
-                ctx.arc(trajPathPoint.x, trajPathPoint.y, 5, 0, 2 * Math.PI);
-                ctx.fill();
             }
 
             //Timeline menu/Planning menu
@@ -933,13 +1219,18 @@ class Field extends React.Component {
             }
 
             if (this.state.planningMenu) {
-                const pmPos = this.state.planningMenuPos;
-                ctx.fillStyle = "#dd28ed";
-                ctx.beginPath();
-                ctx.arc(pmPos.x, pmPos.y, 5, 0, 2 * Math.PI);
-                ctx.fill();
+                let pmPos = Object.assign({}, this.state.planningMenuPos);
 
                 const options = this.state.planningMenuOptions.filter(option => option.renderCondition())
+
+                if (pmPos.y + options.length * 30 > ctx.canvas.height) {
+                    pmPos.y -= options.length * 30;
+                }
+
+                ctx.fillStyle = "#dd28ed";
+                ctx.beginPath();
+                ctx.arc(this.state.planningMenuPos.x, this.state.planningMenuPos.y, 5, 0, 2 * Math.PI);
+                ctx.fill();
 
                 ctx.fillStyle = "#383838";
                 ctx.fillRect(pmPos.x, pmPos.y, 200, options.length * 30 + 5);
@@ -963,6 +1254,10 @@ class Field extends React.Component {
                 }
             }
         }
+
+
+        //Set the mouse pos
+        this.state.mouse = {x: mouse.x, y: mouse.y}
     }
     keyDown(e) {
         const lk = e.key.toLowerCase();
@@ -1036,6 +1331,7 @@ class Field extends React.Component {
         } else if (lk == "g" && !this.state.keysDown[lk]) {
             this.state.planner.generatePath(this.state.planner.getPositions()[0], -1, false);
         } else if (lk == "h" && !this.state.keysDown[lk]) {
+            this.state.planner.updatePositionEvents(this.state.positionEvents)
             const newTimeline = this.state.planner.generateTimeline([], 0);
             this.state.timeline.generated = newTimeline;
         } else if (lk == "p" && !this.state.keysDown[lk]) {

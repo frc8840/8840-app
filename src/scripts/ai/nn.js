@@ -495,3 +495,6 @@ class ReactNN extends React.Component {
 }
 
 export default { NeuralNetwork, Activation, ReactNN };
+
+export { NeuralNetwork };
+export { Activation };

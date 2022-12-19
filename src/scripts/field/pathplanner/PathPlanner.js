@@ -9,6 +9,7 @@ import PID from "../../pid/PID";
 
 //Unit math
 import { Unit, Angle } from "../../misc/unit";
+import PositionEvent from "./PositionEvent";
 
 //Constants
 const pathDeltaTime = 0.03125;
@@ -47,7 +48,8 @@ class PathPlanner {
                     }
                 ],
                 generated: [],
-            }
+            },
+            positionEvents: [],
         };
 
         this.state.trajectorySettings = Object.assign(this.state.trajectorySettings, trajectorySettings);
@@ -55,6 +57,10 @@ class PathPlanner {
 
     updatePositions(positions) {
         this.state.positions = positions;
+    }
+
+    updatePositionEvents(posEvents) {
+        this.state.positionEvents = posEvents;
     }
 
     addPosition(pos) {
@@ -716,7 +722,9 @@ class PathPlanner {
                 y: pointOnBezier.y,
             }
 
-            path.push(Object.assign({}, pointOnBezier));
+            path.push(Object.assign({
+                distance: distanceTracker
+            }, pointOnBezier));
 
             prog++;
 
@@ -799,6 +807,36 @@ class PathPlanner {
             y: new Unit(currentPoint.y / i2p, Unit.Type.INCHES),
         };
 
+        let rotationEvents = this.state.positionEvents.filter(e => e.type == PositionEvent.Type.Rotation);
+
+        let rotationEventsOnPID = [];
+
+        for (let rotationEvent of rotationEvents) {
+            let closestPoint = {x: 0, y: 0, distance: 0, index: -1}
+            let closestDistance = 9999999;
+
+            for (let i = 0; i < path.length; i++) {
+                const distFromRotationEvent = dist(rotationEvent.x, rotationEvent.y, path[i].x, path[i].y)
+                if (distFromRotationEvent < closestDistance) {
+                    closestPoint = {
+                        x: path[i].x,
+                        y: path[i].y,
+                        distance: path[i].distance,
+                        index: i
+                    }
+                    closestDistance = distFromRotationEvent;
+                }
+            }
+
+            rotationEventsOnPID.push(Object.assign({
+                reference: rotationEvent
+            }, closestPoint))
+        }
+
+        rotationEventsOnPID = rotationEventsOnPID.sort((a, b) => a.distance - b.distance)
+
+        let lastAngle = 0;
+
         for (let t = 0; t <= this.state.trajectorySettings.time; t += deltaTime) {
             const currentEvents = this.state.timeline.events.filter(event => (event.start <= t && event.end >= t));
             const drivingStateChanged = driving == isDriving(currentEvents);
@@ -843,6 +881,64 @@ class PathPlanner {
                         x: new Unit(newCurrentPoint.x / i2p, Unit.Type.INCHES),
                         y: new Unit(newCurrentPoint.y / i2p, Unit.Type.INCHES),
                     }
+                    
+                    let angle = new Angle(Math.atan2(newCurrentPoint.y - lastPoint.y, newCurrentPoint.y - lastPoint.y), Angle.Radians);
+
+                    if (rotationEvents.length > 0) {
+                        if (rotationEvents.length == 1) {
+                            angle = rotationEvents[0].data.rotation.get(Angle.Radians)
+                        } else {
+                            if (newCurrentPoint.distance <= rotationEventsOnPID[0].distance) {
+                                angle = rotationEventsOnPID[0].reference.data.rotation.get(Angle.Radians)
+                            } else if (newCurrentPoint.distance >= rotationEventsOnPID[rotationEventsOnPID.length - 1].distance) {
+                                angle = rotationEventsOnPID[rotationEventsOnPID.length - 1].reference.data.rotation.get(Angle.Radians)
+                            } else {
+                                let beforePoint = null;
+                                let afterPoint = null;
+                                
+                                for (let i = 0; i < rotationEventsOnPID.length - 1; i++) {
+                                    if (rotationEventsOnPID[i].distance <= newCurrentPoint.distance) {
+                                        if (rotationEventsOnPID[i + 1].distance >= newCurrentPoint.distance) {
+                                            beforePoint = rotationEventsOnPID[i];
+                                            afterPoint = rotationEventsOnPID[i + 1];
+                                        }
+                                    }
+                                }
+
+                                if (beforePoint == null || afterPoint == null) {
+                                    angle = lastAngle;
+                                } else {
+                                    let endRelativeDistance = afterPoint.distance - beforePoint.distance;
+                                    let relativeCurrentDistance = newCurrentPoint.distance  - beforePoint.distance;
+                                    let percentThrough = relativeCurrentDistance / endRelativeDistance;
+
+                                    let angles = [beforePoint.reference.data.rotation.get(Angle.Radians), afterPoint.reference.data.rotation.get(Angle.Radians)]
+                                    let differences = [angles[0] - angles[1], angles[1] - angles[0]]
+
+                                    for (let i = 0; i < differences.length; i++) {
+                                        if (differences[i] > 360) {
+                                            differences[i] -= 360;
+                                        } else if (differences[i] < 0) {
+                                            differences[i] += 360;
+                                        }
+                                    }
+
+                                    if (differences[0] < differences[1]) {
+                                        angle = angles[0] - (differences[0] * percentThrough);
+                                    } else {
+                                        angle = angles[0] + (differences[1] * percentThrough)
+                                    }
+
+                                    if (angle < 0) {
+                                        angle += 360;
+                                    } else if (angle > 360) {
+                                        angle -= 360;
+                                    }
+                                    
+                                }
+                            }
+                        }
+                    }
 
                     //start driving
                     timeline[timeline.length - 1].push({
@@ -852,11 +948,12 @@ class PathPlanner {
                             x: new Unit(newCurrentPoint.x / i2p, Unit.Type.INCHES),
                             y: new Unit(newCurrentPoint.y / i2p, Unit.Type.INCHES),
                             velocity: dist(lastPoint.x, lastPoint.y, newCurrentPoint.x, newCurrentPoint.y) / i2p / deltaTime,
-                            angle: new Angle(Math.atan2(newCurrentPoint.y - lastPoint.y, newCurrentPoint.y - lastPoint.y), Angle.Radians),
+                            angle
                         }
                     })
 
                     lastPoint = newCurrentPoint;
+                    lastAngle = angle;
 
                     drivingPoints++;
                 }

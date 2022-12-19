@@ -29,7 +29,9 @@ class PathSelector extends React.Component {
 
                 this.updatePaths.bind(this)();
             }
-        );
+        ).catch((err) => {
+            console.warn("PathSelector can't update. Is the robot server running?");
+        });
     }
 
     async setPath(path) {

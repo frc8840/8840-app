@@ -5,7 +5,7 @@ import nn from "../../scripts/ai/nn"
 import Canvas from "../../scripts/canvas/Canvas";
 import SwerveInfo from "../../scripts/swerve/SwerveInfo";
 
-import SpeedCC from "../speed-controllers/SpeedCC";
+import SpeedCC from "../../scripts/speed-controllers/SpeedCC";
 
 import "./Home.css"
 import Field from "../../scripts/field/Field";
