@@ -9,7 +9,9 @@ import { addTabListener } from "../pynetworktables2js/wrapper"
 
 import { Angle } from "../misc/unit";
 
-const SpeedControllerTabName = "SpeedControllers";
+const SpeedControllerTabName = "SpeedController";
+
+const maxAmountInList = 1000;
 
 class SpeedCC extends React.Component {
     constructor(props) {
@@ -21,7 +23,7 @@ class SpeedCC extends React.Component {
             doingGraph: false,
             motorImage: null,
             motorImageRotation: 0,
-            motorMaxDegreesPerSecond: new Angle(270, Angle.Degrees),
+            motorMaxDegreesPerSecond: new Angle(10, Angle.Degrees),
             motorHistory: [],
             motorHistoryInterval: 0
         }
@@ -33,6 +35,14 @@ class SpeedCC extends React.Component {
             let valueKey = splitKey[1];
             let subGroup = "";
             let isSubgroupValue = false;
+
+            if (name.startsWith(".")) {
+                return;
+            }
+
+            // if (valueKey.includes("AvgSpeed")) {
+            //     console.log(key, value)
+            // }
             
             if (splitKey.length > 2) {
                 subGroup = splitKey[1];
@@ -40,7 +50,7 @@ class SpeedCC extends React.Component {
                 isSubgroupValue = true;
             }
 
-            if (this.speedControllers[name] == undefined) {
+            if (this.state.speedControllers[name] == undefined) {
                 this.state.speedControllers[name] = {
                     hasSubGroups: false,
                     subGroups: {},
@@ -73,11 +83,13 @@ class SpeedCC extends React.Component {
                     this.state.speedControllers[name].subGroups[subGroup][valueKey] = value;
                 }
             } else {
-                if (valueKey.startsWith("Controller_")) {
-                    const controllerNum = valueKey.split("_")[1];
-                    this.state.speedControllers[name].speeds[controllerNum] = value;
-                } else {
-                    this.state.speedControllers[name][valueKey] = value;
+                if (!!valueKey) {
+                    if (valueKey.startsWith("Controller_")) {
+                        const controllerNum = valueKey.split("_")[1];
+                        this.state.speedControllers[name].speeds[controllerNum] = value;
+                    } else {
+                        this.state.speedControllers[name][valueKey] = value;
+                    }
                 }
             }
         })
@@ -86,16 +98,16 @@ class SpeedCC extends React.Component {
     getNames() {
         let names = [];
         for (let key in this.state.speedControllers) {
-            names.push(this.state.speedControllers[key].getNames());
+            names = names.concat(this.state.speedControllers[key].getNames())
         }
         return names;
     }
 
     getControllerByName(name) {
-        for (let key in Object.keys(this.state.speedControllers)) {
+        for (let key of Object.keys(this.state.speedControllers)) {
             if (this.state.speedControllers[key].getNames().includes(name)) {
-                if (Object.keys(this.state.speedControllers[key].subGroup).length > 0) {
-                    return this.state.speedControllers[key].subGroup[name];
+                if (Object.keys(this.state.speedControllers[key].subGroups).length > 0) {
+                    return this.state.speedControllers[key].subGroups[name];
                 } else {
                     return this.state.speedControllers[key];
                 }
@@ -121,7 +133,6 @@ class SpeedCC extends React.Component {
 
             const perPoint01 = middle / 12;
 
-
             for (let i = -13; i < 13; i++) {
                 ctx.strokeStyle = "#c9c9c9";
                 ctx.beginPath();
@@ -138,6 +149,70 @@ class SpeedCC extends React.Component {
             }
 
             ctx.strokeStyle = "black";
+
+            if (this.state.motorHistory.length > 1) {
+                const range = this.state.motorHistory[this.state.motorHistory.length - 1].t - this.state.motorHistory[0].t;
+
+                const adjustedList = this.state.motorHistory.map((e, i) => {
+                    return {
+                        t: e.t - this.state.motorHistory[0].t,
+                        s: e.s
+                    }
+                })
+                
+                const milliPerPoint = ctx.canvas.width / range; //How many milliseconds per point
+
+                ctx.beginPath();
+                ctx.moveTo(0, middle - (adjustedList[0].s * perPoint01))
+                for (let i = 1; i < adjustedList.length; i++) {
+                    const e = adjustedList[i];
+                    ctx.lineTo(e.t * milliPerPoint, middle - (e.s * perPoint01 * 10));
+                }
+                ctx.stroke();
+
+                let t = 0;
+
+                let per = 1;
+
+                //Per should be equal to 10 when floor(range / 1000) > 20, equal to 100 when floor(range / 1000) > 200, and equal to 1000 when floor(range / 1000) > 2000 and so on and so on
+                if (Math.floor(range / 1000) > 10) {
+                    per = 10;
+                    if (Math.floor(range / 1000) > 100) {
+                        per = 100;
+                        if (Math.floor(range / 1000) > 1000) {
+                            per = 1000; //don't really need to go farther ig.
+                        }
+                    }
+                }
+
+                for (let i = 0; i < Math.floor(range / 1000); i += per) {
+                    ctx.strokeStyle = "#c9c9c9";
+                    ctx.beginPath();
+                    ctx.moveTo(t * milliPerPoint, 0);
+                    ctx.lineTo(t * milliPerPoint, ctx.canvas.height);
+                    ctx.stroke();
+
+                    ctx.font = `12px Arial`;
+                    ctx.fillStyle = "black";
+                    ctx.textAlign = "center";
+                    ctx.fillText(`${i + 1}`, t * milliPerPoint, middle);
+
+                    t += 1000 * per;
+                }
+
+                //If the motorHistory list has a length > maxAmountInList, remove every other element
+                //This is to prevent the graph from taking up a crap ton of memory
+                //and to stop it crashing people's computers if they forgot to turn it off
+                //+ eat up RAM
+                //it'll also prob stay consistent tho since 1000 points is a ton of data points so
+                //yeah.
+                if (this.state.motorHistory.length > maxAmountInList) {
+                    this.state.motorHistory = this.state.motorHistory.filter((e, i) => {
+                        return i % 2 == 0;
+                    })
+                }
+            }
+
         } else {
             //Draw image of motor
             if (this.state.motorImage != null) {
@@ -154,7 +229,8 @@ class SpeedCC extends React.Component {
         }
 
         if (this.state.selectedController != null) {
-            this.state.motorImageRotation += this.state.motorMaxDegreesPerSecond.get(Angle.Radians) * this.getControllerByName.bind(this)(this.state.selectedController).avgSpeed;
+            // console.log(this.getControllerByName.bind(this)(this.state.selectedController).avgSpeed)
+            this.state.motorImageRotation += Angle.toRadians(this.state.motorMaxDegreesPerSecond.get(Angle.Degrees) * this.getControllerByName.bind(this)(this.state.selectedController).AvgSpeed);
         }
 
         ctx.strokeStyle = "black";
@@ -180,17 +256,20 @@ class SpeedCC extends React.Component {
                 onClick: () => {
                     mouse.cancelMouseDown();
 
-                    const choice = prompt("Enter the name of the controller you want to choose.\n\n" + this.getNames().join(", "));
+                    const choice = prompt("Enter the name of the controller you want to choose.\n\n" + this.getNames.bind(this)().join(", "));
                     if (choice != null && this.getNames.bind(this)().includes(choice)) {
                         this.setState({selectedController: choice});
+                        console.log("[SpeedCC]: monitoring " + choice)
                     } else {
                         this.setState({selectedController: null});
+                        console.log("[SpeedCC]: didn't find controller " + choice + " out of ", this.getNames.bind(this)())
                     }
                 }
             },
             {
                 name: "Tgl Graph",
                 onClick: () => {
+                    this.state.motorHistory = [];
                     mouse.cancelMouseDown();
                     this.setState({doingGraph: !this.state.doingGraph});
                 }
@@ -232,7 +311,12 @@ class SpeedCC extends React.Component {
 
         this.state.motorHistoryInterval = setInterval(() => {
             if (this.state.selectedController != null) {
-                this.state.motorHistory.push(this.getControllerByName.bind(this)(this.state.selectedController).avgSpeed)
+                this.state.motorHistory.push(
+                    {
+                        s: this.getControllerByName.bind(this)(this.state.selectedController).AvgSpeed,
+                        t: new Date().getTime(),
+                    }
+                )
             }
         }, 50);
     }

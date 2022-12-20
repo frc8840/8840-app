@@ -11,6 +11,31 @@ class Player {
         this.pos = {x: 0, y: 0}
         this.rotation = new Angle(0, Angle.Radians);
 
+        this.nn = null;
+    } 
+
+    update() {
+
+    }
+
+    draw(i2p, ctx) {
+        //Draw rectangle at robot position
+        ctx.save();
+        ctx.translate(this.pos.x, this.pos.y);
+        ctx.rotate(this.rotation.get(Angle.Radians));
+        ctx.fillRect(0,0, dimensions.width.getcu(i2p, Unit.Type.INCHES), dimensions.length.getcu(i2p, Unit.Type.INCHES))
+        ctx.restore();
+
+        ctx.beginPath();
+        ctx.arc(this.pos.x, this.pos.y, 10, 0, 2 * Math.PI);
+        ctx.stroke();
+    }
+}
+
+class RapidReactPlayer extends Player {
+    constructor() {
+        super();
+
         /**
          * Input nodes:
          * 1: X position (0-1)
@@ -46,20 +71,16 @@ class Player {
             Activation().sigmoid
         );
     }
-    draw(i2p, ctx) {
-        //Draw rectangle at robot position
-        ctx.save();
-        ctx.translate(this.pos.x, this.pos.y);
-        ctx.rotate(this.rotation.get(Angle.Radians));
-        ctx.fillRect(0,0, dimensions.width.getcu(i2p, Unit.Type.INCHES), dimensions.length.getcu(i2p, Unit.Type.INCHES))
-        ctx.restore();
 
-        ctx.beginPath();
-        ctx.arc(this.pos.x, this.pos.y, 10, 0, 2 * Math.PI);
-        ctx.stroke();        
+    update(i2p, ctx, physicsObjects) {
+        const output = this.nn.feedforward([
+            this.pos.x / ctx.canvas.width,
+            this.pos.y / ctx.canvas.height,
+
+        ])
     }
 }
 
-export default Player;
+export default RapidReactPlayer;
 
 export { dimensions };
