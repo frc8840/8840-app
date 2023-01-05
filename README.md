@@ -1,15 +1,22 @@
 # 8840-app
-## Made by Team 8840, Bay Robotics
+
+**This project is currently in development.**
+**Made by Team 8840, Bay Robotics**
 **Credits to [Jaiden Grimminck](https://github.com/JaidenAGrimminck)**
 
-# Overview
+URL: [https://frc8840.github.io/8840-app/](https://frc8840.github.io/8840-app/)
+PathPlanner: [https://frc8840.github.io/8840-app?tab=path_planner](https://frc8840.github.io/8840-app?tab=path_planner)
+Simulation Controls: [https://frc8840.github.io/8840-app?tab=controls](https://frc8840.github.io/8840-app?tab=controls)
+Neural Network Visulation (of a pre-determined input and output): [https://frc8840.github.io/8840-app?tab=nn](https://frc8840.github.io/8840-app?tab=nn)
+Till (not ready yet): [https://frc8840.github.io/8840-app?tab=till](https://frc8840.github.io/8840-app?tab=till)
+
+## Overview
 
 This project is our team's web dashboard for the First Robotics Competition.
 
 This repository contains a react project with an autonomous robot planner, physics simulation for the compeition, and AI tools. It also contains tools ([credit to pynetworktables2js](https://github.com/robotpy/pynetworktables2js)) to communicate with NetworkTables and with our own servers running on the robot with [8840-utils](https://github.com/frc8840/).
 
-
-# How to Run
+## How to Run
 
 Unfortunately, it's a bit difficult to run since we don't have a built version online, but you can run it locally. In the future we'll add an online version too, but for now you'll have to download it first.
 
@@ -21,9 +28,9 @@ First, you'll need to download the repository. You can do this by clicking the g
 
 To run the project, you'll need to have [Node.js](https://nodejs.org/en/) installed. Once you have Node.js installed, open a terminal in the repository folder and run `npm install`. This will install all the dependencies. Once that's done, run `npm start` and the project will start running in your browser.
 
-# How to Use
+## How to Use
 
-## Autonomous Robot Planner
+### Autonomous Robot Planner
 
 Go to `https://localhost:3000/?tab=path_planner` to open it. (Or whatever port you're running the server on instead of 3000.)
 
@@ -51,28 +58,28 @@ Key List:
 - `Left Arrow`: Go back a bit
 - `Right Arrow`: Go forward a bit
 
-## Physics Simulation
+### Physics Simulation
 
 You can view it at `http://localhost:3000/`. The physics simulation is a bit buggy, but it's still pretty cool. It'll be improved in the near future to be used with AI tools, and for one of our team's goals, which is to be able to have a robot that can play a full match without human input.
 
 The physics simulation currently doesn't have much, but you can intereact with it using your mouse. You can use your mouse to bump into the balls and make them move around. The wall physics are a bit broken though, they will be fixed in the next few weeks though.
 
-## AI Tools
+### AI Tools
 
 Right now, there isn't many AI tools accessable in the front end, but you can view them at `http://localhost:3000/?tab=nn`. You can see a graph of the neural network's error, the neurons layed out, and a train button. You can see the outputs of the train button in the console (inspect element -> console).
 
-# Contributing
+## Contributing
 
 If you want to contribute, you can fork the repository and make a pull request.
 
-# License
+## License
 
 This project is licensed under the MIT License. See the [LICENSE](LICENSE) file for more details.
 
-# Credits
+## Credits
 
 Thank you to the pynetworktables2js team for making the NetworkTables connection code. You can find their repository [here](https://github.com/robotpy/pynetworktables2js).
 
-# Contact
+## Contact
 
 You can contact us [here, on our website](https://www.team8840.org/contact).
