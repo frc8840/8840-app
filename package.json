@@ -1,7 +1,7 @@
 {
   "name": "8840-app",
-  "version": "0.1.0",
-  "homepage": "https://frc8840.github.io/8840app",
+  "version": "0.2.0",
+  "homepage": "https://frc8840.github.io/8840-app",
   "private": true,
   "dependencies": {
     "@testing-library/jest-dom": "^5.16.5",

@@ -27,7 +27,7 @@ function Home() {
 
     let useHosting = true;
 
-    console.log("Loading tab: " + params.get("tab"))
+    console.log("Loading tab: " + params.has("tab") ? params.get("tab") : "No tab specified.")
 
     if (params.get("tab") === "nn") {
         tab = (
