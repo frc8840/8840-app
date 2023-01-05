@@ -27,6 +27,8 @@ function Home() {
 
     let useHosting = true;
 
+    console.log("Loading tab: " + params.get("tab"))
+
     if (params.get("tab") === "nn") {
         tab = (
             <div className="neural-parent">
