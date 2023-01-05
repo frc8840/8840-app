@@ -11,6 +11,7 @@ import "./Home.css"
 import Field from "../../scripts/field/Field";
 import Till from "../till/Till";
 import PathSelector from "../../scripts/field/pathplanner/selector/PathSelector";
+import SimControls from "../../scripts/controls/SimControls";
 
 function Home() {
     const [params, setSearchParams] = useSearchParams();
@@ -64,6 +65,17 @@ function Home() {
     } else if (params.get("tab") === "till") {
         tab = (<Till></Till>);
         useHosting = false;
+    } else if (params.get("tab") === "controls") {
+        tab = (
+            <div>
+                <SimControls type={SimControls.Type.Joystick}></SimControls>
+                <SimControls type={SimControls.Type.Rotation}></SimControls>
+                <SimControls type={SimControls.Type.Button}></SimControls>
+                <SimControls type={SimControls.Type.FOV}></SimControls>
+                <PathSelector></PathSelector>
+                <SwerveInfo></SwerveInfo>
+            </div>
+        )
     }
 
     return (

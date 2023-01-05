@@ -259,10 +259,10 @@ class SpeedCC extends React.Component {
                     const choice = prompt("Enter the name of the controller you want to choose.\n\n" + this.getNames.bind(this)().join(", "));
                     if (choice != null && this.getNames.bind(this)().includes(choice)) {
                         this.setState({selectedController: choice});
-                        console.log("[SpeedCC]: monitoring " + choice)
+                        console.log("[SpeedCC] monitoring " + choice)
                     } else {
                         this.setState({selectedController: null});
-                        console.log("[SpeedCC]: didn't find controller " + choice + " out of ", this.getNames.bind(this)())
+                        console.log("[SpeedCC] didn't find controller " + choice + " out of ", this.getNames.bind(this)())
                     }
                 }
             },

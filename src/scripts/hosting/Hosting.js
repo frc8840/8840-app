@@ -22,7 +22,7 @@ class Hosting extends React.Component {
     }
 
     componentDidMount() {
-        console.log("Trying to connect...")
+        console.log("[8840-Server] Trying to connect...")
 
         let defaultSettings = {
             host: "localhost",
@@ -53,7 +53,7 @@ class Hosting extends React.Component {
 
         const connected = await nt.ping();
 
-        console.log(`Connected to server (Host: ${window.nt.host}, Port: ${window.nt.port})? ${connected}`);
+        console.log(`[8840-Server] Connected to server (Host: ${window.nt.host}, Port: ${window.nt.port})? ${connected}`);
         
         if (connected) {
             this.setState({status: "connected"});

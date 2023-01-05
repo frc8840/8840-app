@@ -12,6 +12,11 @@ import AprilTagManager from "./apriltags/AprilTags";
 import "./Field.css"
 import dist from "../misc/dist";
 import PositionEvent from "./pathplanner/PositionEvent";
+import PlayerStartManager from "./interact/PlayerStart";
+
+import { load, save } from "../save/SaveManager";
+import RapidReactPlayer from "./interact/Player";
+import probability, { random } from "../misc/probability";
 
 const degreeDifference = 15;
 
@@ -20,6 +25,8 @@ const pathDeltaTime = 0.03125;
 const baseDistanceBetweenPoints = 3;
 
 const positionEventEditDistance = 10;
+
+const maxAmountOfPlayers = 6;
 
 /*
        @---------------------\
@@ -325,6 +332,7 @@ class Field extends React.Component {
 
         //Save to state
         this.state = {
+            game: "rapidReact",
             rapidReact: {
                 scores: {
                     blue: 0,
@@ -366,6 +374,13 @@ class Field extends React.Component {
                     ctx.strokeStyle = "#000000";
                 }
             },
+
+            players: [],
+            playerStart: new PlayerStartManager(maxAmountOfPlayers, {
+                x: rapidReact.field.width.halfMeasure.getcu(i2p, Unit.Type.INCHES),
+                y: rapidReact.field.height.halfMeasure.getcu(i2p, Unit.Type.INCHES)
+            }, 150),
+
             i2p,
             simulationType,
             keyListeners: [],
@@ -663,9 +678,9 @@ class Field extends React.Component {
 
         if (simulationType == Field.SimulType.Planning) { 
             //TODO: Add this in when releasing
-            // window.onbeforeunload = () => {
-            //     return this.state.positions > 0;
-            // };
+            window.onbeforeunload = () => {
+                return this.state.positions > 0;
+            };
 
             this.state.keyListeners.push(this.state.timeline);
 
@@ -686,13 +701,20 @@ class Field extends React.Component {
                     console.warn("Cannot save a path that has 0 points.");
                     return;
                 }
-                let pathString = JSON.stringify(path);
-                localStorage.setItem(pathName, pathString);
+
+                save(`path/${pathName}`, path)
+
+                //localStorage.setItem(pathName, pathString);
             }
 
             window.loadPathLocal = (pathName="default") => {
-                let pathString = localStorage.getItem(pathName);
-                let path = JSON.parse(pathString);
+                let pathString = load(`path/${pathName}`)
+
+                if (pathName.startsWith("legacy ")) {
+                    pathString = JSON.parse(localStorage.getItem(pathName.replace("legacy ", "")));
+                }
+
+                let path = pathString;
                 this.state.planner.updatePositions(path);
                 this.state.generatedPath = this.state.planner.generateBezierCurve({
                     distBetweenPoints: baseDistanceBetweenPoints
@@ -704,7 +726,7 @@ class Field extends React.Component {
                     })
                 });
 
-                window.lastLoadedFile = pathName;
+                window.lastLoadedFile = pathName.replace("legacy ", "");
             }
         }
     }
@@ -860,7 +882,7 @@ class Field extends React.Component {
                     let upperBound = Math.PI + angleOfWall.get(Angle.Radians);
 
                     let bottom = angleOfBall.get(Angle.Radians) > lowerBound && angleOfBall.get(Angle.Radians) < upperBound;
-                    ctx.fillText("Collision " + side.between + ", " + angleOfBall.get(Angle.Radians) + "," + bottom + ", " + (Math.floor(lowerBound * 100) / 100) + ', ' + (Math.floor(upperBound * 100) / 100), 10, 50 + physObj.rotation.get(Angle.Degrees));
+                    //ctx.fillText("Collision " + side.between + ", " + angleOfBall.get(Angle.Radians) + "," + bottom + ", " + (Math.floor(lowerBound * 100) / 100) + ', ' + (Math.floor(upperBound * 100) / 100), 10, 50 + physObj.rotation.get(Angle.Degrees));
                     ctx.fillStyle = "white";
                 } 
                 // 
@@ -1252,6 +1274,27 @@ class Field extends React.Component {
                         });
                     }
                 }
+            }
+        } else if (this.state.simulationType == Field.SimulType.Field) {
+            //Draw starts for robot.
+            this.state.playerStart.draw(ctx, i2p, mouse, this.state.keysDown);
+
+            if (this.state.keysDown["u"] && this.state.players.length == 0) {
+                let positions = this.state.playerStart.returnPositions();
+                let randomTeam = probability(0.5).predict() ? "red" : "blue";
+                let randomPos = random(0, positions[randomTeam].length - 1);
+
+                let newPlayer = new RapidReactPlayer(positions[randomTeam][randomPos], randomTeam == "blue" ? RapidReactPlayer.Team.BLUE : RapidReactPlayer.Team.RED);
+                newPlayer.isAi = true;
+                newPlayer.rotation = new Angle(0, Angle.Radians);
+
+                this.state.players.push(newPlayer)
+            }
+
+            for (let player of this.state.players) {
+                player.draw(ctx, i2p);
+                //remove later
+                player.update(ctx, i2p, this.state[this.state.game].physicalObjects.concat(this.state[this.state.game].balls), this.state.players)
             }
         }
 

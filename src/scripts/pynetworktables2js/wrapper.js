@@ -1,7 +1,7 @@
 import initialize from "./networktables.js";
 
 const tabKeySeperator = "/";
-const _start = "/Shuffleboard/";
+const _start = "/8840-lib/";
 
 function init(host="localhost:8888") {
     global.pynttbl2js = {
@@ -16,9 +16,9 @@ function init(host="localhost:8888") {
     //Add listener for when robot is connected to networktables
     global.NetworkTables.addRobotConnectionListener((connected) => {
         if (connected) {
-            console.log("Connected to robot!");
+            console.log("[NTWrapper] Connected to robot!");
         } else {
-            console.log("Disconnected from robot!");
+            console.log("[NTWrapper] Disconnected from robot!");
         }
 
         if (!Object.keys(global).includes("robotStatus")) global.robotStatus = {};
@@ -26,7 +26,7 @@ function init(host="localhost:8888") {
     }, true);
 
     global.NetworkTables.addGlobalListener((key_, value, isNew) => {
-        const key = key_.replace("/Shuffleboard/", "");
+        const key = key_.replace(_start, "");
 
         for (let tab of Object.keys(global.nt_listeners)) {
             if (key.startsWith(tab + tabKeySeperator)) {
@@ -41,7 +41,7 @@ function init(host="localhost:8888") {
 
 function addTabListener(tab, callback=(key, value, isNew) => {}) {
     global.nt_listeners[tab] = callback;
-    console.log("Added tab listener for tab " + tab);
+    console.log("[NTWrapper] Added tab listener for tab " + tab);
 }
 
 function getValue(tab, key, defaultValue=null) {
@@ -56,7 +56,12 @@ function getTabs() {
     return Object.keys(global.NetworkTables.getKeys()).map((key) => key.replace(_start, "").split(tabKeySeperator)[0]).filter((value, index, self) => self.indexOf(value) === index);
 }
 
+function putValue(tab, path, value) {
+    let success = global.NetworkTables.putValue(`${_start}${tab}/${path}`, value);
+    return success;
+}
+
 
 export default init;
 
-export { addTabListener, getValue, getTabKeys };
+export { addTabListener, getValue, getTabKeys, putValue, getTabs };

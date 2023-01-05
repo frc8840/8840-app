@@ -2,6 +2,7 @@
 import { Angle, Unit } from "../../misc/unit";
 
 import dist from "../../misc/dist";
+import { save, load } from "../../save/SaveManager";
 
 class AprilTag {
     constructor(id, x, y, angle, size) {
@@ -42,8 +43,8 @@ class AprilTag {
         ctx.restore();
     }
     
-    static fromObject(obj) {
-        return new AprilTag(obj.id, obj.x, obj.y, obj.rotation, obj.size);
+    static fromObject(obj, i2p) {
+        return new AprilTag(obj.id, obj.x * i2p, obj.y * i2p, obj.rotation, obj.size);
     }
 }
 
@@ -73,21 +74,22 @@ class AprilTagManager {
         for (let tag of this.tags) {
             toBeSaved.push({
                 id: tag.id,
-                x: tag.x,
-                y: tag.y,
+                x: tag.x / this.i2p,
+                y: tag.y / this.i2p,
                 rotation: tag.rotation.get(Angle.Radians),
                 size: tag.size.get(Unit.Type.INCHES),
             });
         }
-        window.localStorage.setItem("aprilTags", JSON.stringify(toBeSaved));
+        // window.localStorage.setItem("aprilTags", JSON.stringify(toBeSaved));
+        save("aprilTags", toBeSaved)
     }
     loadAprilTags() {
-        const aprilTags = window.localStorage.getItem("aprilTags");
+        const aprilTags = load("aprilTags"); //window.localStorage.getItem("aprilTags");
         if (aprilTags) {
-            const savedTags = JSON.parse(aprilTags);
+            const savedTags = aprilTags;
             this.tags = [];
             for (let i = 0; i < savedTags.length; i++) {
-                this.tags.push(AprilTag.fromObject(savedTags[i]));
+                this.tags.push(AprilTag.fromObject(savedTags[i], this.i2p));
             }
         }
     }

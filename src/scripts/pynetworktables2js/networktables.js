@@ -653,11 +653,11 @@ const NetworkTables = new function() {
 		Sets the value in NetworkTables. If the websocket is not connected, the
 	    value will be discarded.
 
-	    :param key: A networktables key
-	    :param value: The value to set (see warnings)
-	    :returns: True if the websocket is open, False otherwise
+	    @param key: A networktables key
+	    @param value: The value to set (see warnings)
+	    @returns: True if the websocket is open, False otherwise
 
-	    .. note:: When you put a value, it will not be immediately available
+		.. note:: When you put a value, it will not be immediately available
 	              from ``getValue``. The value must be sent to the NetworkTables
 	              server first, which will then send the change notification
 	              back up to the javascript NetworkTables key/value cache.
@@ -718,10 +718,22 @@ const NetworkTables = new function() {
 		try {
 			if (Object.keys(window).includes("pause")) if (window.pause) throw "paused";
 			if (Object.keys(window).includes("pausent")) if (window.pausent) throw "paused";
-			console.log("Attempting to create NT Socket at ", address);
+			console.log("[NT] Attempting to create NT Socket at ", address);
+
+			if (!Object.keys(window).includes("nt_connection_attempts")) {
+				window["nt_connection_attempts"] = [];
+			}
+
+			window["nt_connection_attempts"].push(new Date().getTime());
+			window["nt_connection_attempts"] = window["nt_connection_attempts"].filter(t => new Date().getTime() - t < 2000);
+
+			if (window["nt_connection_attempts"].length > 3) {
+				console.warn("[NT] Automatically pausing NT. Too many requests in too little time.")
+				window["pausent"] = true;
+			}
 			socket = new WebSocket(address);
 		} catch (e) {
-			console.warn("Could not create websocket. Is the robot connected?");
+			console.warn("[NT] Could not create websocket. Is the robot connected?");
 			return;
 		} 
 		if (socket) {
@@ -792,7 +804,7 @@ const NetworkTables = new function() {
 
 function initialize() {
 	global.NetworkTables = NetworkTables;
-	console.log("NetworkTables initialized, and added to global scope");
+	console.log("[NT] NetworkTables initialized, and added to global scope");
 }
 
 export default initialize;
