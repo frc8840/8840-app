@@ -1,14 +1,14 @@
 # 8840-app
 
-**This project is currently in development.**
-**Made by Team 8840, Bay Robotics**
-**Credits to [Jaiden Grimminck](https://github.com/JaidenAGrimminck)**
+**This project is currently in development.**  
+**Made by Team 8840, Bay Robotics**  
+**Credits to [Jaiden Grimminck](https://github.com/JaidenAGrimminck)**  
 
-URL: [https://frc8840.github.io/8840-app/](https://frc8840.github.io/8840-app/)
-PathPlanner: [https://frc8840.github.io/8840-app?tab=path_planner](https://frc8840.github.io/8840-app?tab=path_planner)
-Simulation Controls: [https://frc8840.github.io/8840-app?tab=controls](https://frc8840.github.io/8840-app?tab=controls)
+URL: [https://frc8840.github.io/8840-app/](https://frc8840.github.io/8840-app/)  
+PathPlanner: [https://frc8840.github.io/8840-app?tab=path_planner](https://frc8840.github.io/8840-app?tab=path_planner)  
+Simulation Controls: [https://frc8840.github.io/8840-app?tab=controls](https://frc8840.github.io/8840-app?tab=controls)  
 Neural Network Visulation (of a pre-determined input and output): [https://frc8840.github.io/8840-app?tab=nn](https://frc8840.github.io/8840-app?tab=nn)
-Till (not ready yet): [https://frc8840.github.io/8840-app?tab=till](https://frc8840.github.io/8840-app?tab=till)
+Till (not ready yet): [https://frc8840.github.io/8840-app?tab=till](https://frc8840.github.io/8840-app?tab=till)  
 
 ## Overview
 
@@ -45,6 +45,7 @@ To save the path locally, press the S key. To load a path, press the L key.
 To generate the timeline, press the H key. To play the timeline, press the Spacebar. To restart the playback, press the K key. To go forward a bit or back a bit, use the arrow keys.
 
 Key List:
+
 - `A`: Add points
 - `G`: Generate PID points
 - `T`: Edit timeline
