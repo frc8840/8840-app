@@ -12,6 +12,7 @@ import Field from "../../scripts/field/Field";
 import Till from "../till/Till";
 import PathSelector from "../../scripts/field/pathplanner/selector/PathSelector";
 import SimControls from "../../scripts/controls/SimControls";
+import IOPowerDistribution from "../../scripts/io/pd/IOPowerDistribution";
 
 function Home() {
     const [params, setSearchParams] = useSearchParams();
@@ -76,6 +77,12 @@ function Home() {
                 <SimControls type={SimControls.Type.FOV}></SimControls>
                 <PathSelector></PathSelector>
                 <SwerveInfo></SwerveInfo>
+            </div>
+        )
+    } else if (params.get("tab") === "io") {
+        tab = (
+            <div>
+                <IOPowerDistribution></IOPowerDistribution>
             </div>
         )
     }
