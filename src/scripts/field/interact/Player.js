@@ -534,6 +534,105 @@ class RapidReactPlayer extends Player {
     }
 }
 
+class ChargedUpPlayer extends Player {
+    static spawningProbabilites = {
+        
+    }
+
+    static GamePiece = {
+        Cone: "Cone",
+        
+    }
+
+    static summon(playerStartManager, hasTeamAI=false) {
+        let players = [];
+
+        const positions = playerStartManager.returnPositions();
+        
+        for (let bluePlayer of positions.blue) {
+            players.push(new ChargedUpPlayer(bluePlayer, 0));
+        }
+
+        for (let redPlayer of positions.red) {
+            players.push(new ChargedUpPlayer(redPlayer, 1));
+        }
+
+        if (hasTeamAI) {
+            players[random(players.length)].toCapabilitiesOfRobot();
+            players[random(players.length)].isAi = true;
+        }
+
+        return players;
+    }
+
+    static Roles = {
+        Defender: "Defender",
+        Delivery: "Delivery",
+    }
+
+    constructor(position={x: 0, y: 0}, team=0) {
+        super(position, team);
+
+        //TODO: Figure out input nodes.
+        /**
+         * Input nodes:
+         * 1: X position (0-1)
+         * 2: Y position (0-1)
+         * 3: Front sensor 1
+         * 4: Front sensor 2
+         * 5: Back sensor 1
+         * 6: Back sensor 2
+         * 7: Left sensor 1
+         * 8: Left sensor 2
+         * 9: Right sensor 1
+         * 10: Right sensor 2
+         * 11: 
+         */
+
+        /**
+         * Output nodes:
+         * 1: Forward
+         * 2: Backward
+         * 3: Left
+         * 4: Right
+         */
+
+        this.nn = new NeuralNetwork(
+            14, //Input ndoes
+            [14, 14, 10, 10, 8], //Hidden nodes/layers
+            4, //Output nodes
+            0.01, //Learning rate
+            Activation().sigmoid
+        );
+
+        //Capabilities
+        this.canMove = true;
+        this.canRotate = true;
+
+        this.isAi = false;
+
+        //This is for if it's not an AI, so it knows what to prioritize
+        this.role = ChargedUpPlayer.Roles.Defender;
+
+        //Inventory
+        this.inventory = {
+            gamePiece: null,
+        }
+
+        this.id = window.generatePlayerID.next().value;
+    }
+
+    toCapabilitiesOfRobot(capabilites = null) {
+        for (let [key, value] of Object.entries(capabilites === null ? rapidReactCapabilities : capabilites)) {
+            this[key] = value;
+        }
+    }
+
+    update(ctx, i2p, physicsObjects, players) {
+        //TODO: fix and make
+    }
+}
+
 export default RapidReactPlayer;
 
 export { dimensions };

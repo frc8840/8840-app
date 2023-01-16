@@ -2,6 +2,12 @@
 class Angle {
     static Radians = 0;
     static Degrees = 1;
+    static Type = { //just for consistency with copilot and unit.type
+        RADIANS: 0,
+        Radians: 0,
+        DEGREES: 1,
+        Degrees: 1,
+    }
     constructor(value, unit) {
         this.value = value;
         this.unit = unit;

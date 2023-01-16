@@ -7,7 +7,7 @@ import { Ball, Physical } from "./PlayObj";
 
 import PathPlanner from "./pathplanner/PathPlanner";
 import TimelinePlanner from "./pathplanner/TimelinePlanner";
-import AprilTagManager from "./apriltags/AprilTags";
+import AprilTagManager, { AprilTag } from "./apriltags/AprilTags";
 
 import "./Field.css"
 import dist from "../misc/dist";
@@ -27,6 +27,9 @@ const baseDistanceBetweenPoints = 3;
 const positionEventEditDistance = 10;
 
 const maxAmountOfPlayers = 6;
+
+
+const defaultAprilTagSize = new Unit(8, Unit.Type.INCHES);
 
 /*
        @---------------------\
@@ -219,6 +222,663 @@ const rapidReact = {
     }
 }
 
+const chargedUp = {
+    autonomousLength: 15,
+    field: {
+        width: {
+            halfMeasure: new Unit((54 * 12 + 3.5) / 2, Unit.Type.INCHES),
+            fullMeasure: new Unit((54 * 12 + 3.5), Unit.Type.INCHES),
+        },
+        // 26 ft. 3½ in
+        height: {
+            halfMeasure: new Unit(((26 * 12) + 3.5) / 2, Unit.Type.INCHES),
+            fullMeasure: new Unit((26 * 12) + 3.5, Unit.Type.INCHES),
+        }
+    },
+    gamePieceStarts: {
+        offsetFromCenter: new Unit(47.36, Unit.Type.INCHES),
+        topOffset: new Unit(36.19, Unit.Type.INCHES),
+        betweenSpace: new Unit(48, Unit.Type.INCHES),
+        radius: new Unit(2, Unit.Type.INCHES),
+        numberOfStartPositionsPerSide: 4,
+        getYPoses: () => {
+            const max_height = chargedUp.field.height.fullMeasure;
+            const topOffset = chargedUp.gamePieceStarts.topOffset;
+            const between = chargedUp.gamePieceStarts.betweenSpace;
+
+            let startYPosition = max_height.get(Unit.Type.INCHES) - topOffset.get(Unit.Type.INCHES);
+
+            let yPositions = [
+                startYPosition,
+                startYPosition - (between.get(Unit.Type.INCHES)),
+                startYPosition - (2 * between.get(Unit.Type.INCHES)),
+                startYPosition - (3 * between.get(Unit.Type.INCHES)),
+            ];
+
+            return yPositions;
+        },
+        blue: () => {
+            //All measurements are made in inches in this calculation.
+            const max_width = chargedUp.field.width.fullMeasure;
+            const offset = chargedUp.gamePieceStarts.offsetFromCenter;
+            
+            const yPoses = chargedUp.gamePieceStarts.getYPoses();
+
+            const xPos = (max_width.get(Unit.Type.INCHES) / 2) - offset.get(Unit.Type.INCHES);
+
+            let positions = [];
+
+            for (let i = 0; i < chargedUp.gamePieceStarts.numberOfStartPositionsPerSide; i++) {
+                positions.push({
+                    x: new Unit(xPos, Unit.Type.INCHES),
+                    y: new Unit(yPoses[i], Unit.Type.INCHES)
+                });
+            }
+
+            return positions;
+        },
+        red: () => {
+            //All measurements are made in inches in this calculation.
+            const max_width = chargedUp.field.width.fullMeasure;
+            const offset = chargedUp.gamePieceStarts.offsetFromCenter;
+            
+            const yPoses = chargedUp.gamePieceStarts.getYPoses();
+
+            const xPos = (max_width.get(Unit.Type.INCHES) / 2) + offset.get(Unit.Type.INCHES);
+
+            let positions = [];
+
+            for (let i = 0; i < chargedUp.gamePieceStarts.numberOfStartPositionsPerSide; i++) {
+                positions.push({
+                    x: new Unit(xPos, Unit.Type.INCHES),
+                    y: new Unit(yPoses[i], Unit.Type.INCHES)
+                });
+            }
+
+            return positions;
+        }
+    },
+    grid: {
+        depth: new Unit(54.05, Unit.Type.INCHES),
+        length: new Unit(33 + 18.25 + 47.75 + 18.25 + 47.75 + 18.25 + 33.22, Unit.Type.INCHES),
+        blueTopLeftPosition: () => {
+            return {
+                x: new Unit(0, Unit.Type.INCHES),
+                y: new Unit(chargedUp.field.height.fullMeasure.get(Unit.Type.INCHES) - chargedUp.grid.length.get(Unit.Type.INCHES), Unit.Type.INCHES)
+            }
+        },
+        redTopLeftPosition: () => {
+            return {
+                x: new Unit(chargedUp.field.width.fullMeasure.get(Unit.Type.INCHES) - chargedUp.grid.depth.get(Unit.Type.INCHES), Unit.Type.INCHES),
+                y: new Unit(chargedUp.field.height.fullMeasure.get(Unit.Type.INCHES) - chargedUp.grid.length.get(Unit.Type.INCHES), Unit.Type.INCHES)
+            }
+        },
+        rows: {
+            topRowWidth: new Unit(54.05 - 31.59, Unit.Type.INCHES),
+            middleRowWidth: new Unit(31.59 - 14.28, Unit.Type.INCHES),
+            bottomRowWidth: new Unit(14.28, Unit.Type.INCHES),
+
+            lengthOfBottomFieldConeSection: new Unit(33, Unit.Type.INCHES),
+            lengthOfTopFieldConeSection: new Unit(33.22, Unit.Type.INCHES),
+            lengthOfCubeSection: new Unit(18.25, Unit.Type.INCHES),
+            lengthOfInnerConeSection: new Unit(47.75 / 2, Unit.Type.INCHES),
+
+            getBlueDimensionsList: () => {
+                let locations = {
+                    top: [],
+                    middle: [],
+                    bottom: []
+                }
+
+                const generalTopRowX = chargedUp.grid.blueTopLeftPosition().x.get(Unit.Type.INCHES);
+                const middleRowX = generalTopRowX + chargedUp.grid.rows.topRowWidth.get(Unit.Type.INCHES);
+                const bottomRowX = middleRowX + chargedUp.grid.rows.middleRowWidth.get(Unit.Type.INCHES);
+
+                const topRowWidth = chargedUp.grid.rows.topRowWidth.get(Unit.Type.INCHES);
+                const middleRowWidth = chargedUp.grid.rows.middleRowWidth.get(Unit.Type.INCHES);
+                const bottomRowWidth = chargedUp.grid.rows.bottomRowWidth.get(Unit.Type.INCHES);
+
+                const colors = {
+                    cone: {
+                        coop: {
+                            top: "#807e7e",
+                            middle: "#696969",
+                            bottom: "#616161",
+                        },
+                        outer: {
+                            top: "#5a69f2",
+                            middle: "#4152f0",
+                            bottom: "#616161",
+                        }
+                        
+                    },
+                    cube: {
+                        top: "#ebebeb",
+                        middle: "#a3a3a3",
+                        bottom: "#616161",
+                    }
+                }
+
+                const order = [
+                    "outerTop",
+                    "cube",
+                    "inner_outer",
+                    "inner_coop",
+                    "cube",
+                    "inner_coop",
+                    "inner_outer",
+                    "cube",
+                    "outerBottom"
+                ]
+
+                let currentY = chargedUp.grid.blueTopLeftPosition().y.get(Unit.Type.INCHES);
+
+                for (let i = 0; i < order.length; i++) {
+                    const c = order[i];
+
+                    let height = 0;
+                    let color = "";
+
+                    switch (c) {
+                        case "outerTop":
+                            height = chargedUp.grid.rows.lengthOfTopFieldConeSection.get(Unit.Type.INCHES);
+                            color = colors.cone.outer;
+                            break;
+                        case "cube":
+                            height = chargedUp.grid.rows.lengthOfCubeSection.get(Unit.Type.INCHES);
+                            color = colors.cube;
+                            break;
+                        case "inner_outer":
+                            height = chargedUp.grid.rows.lengthOfInnerConeSection.get(Unit.Type.INCHES);
+                            color = colors.cone.outer;
+                            break;
+                        case "inner_coop":
+                            height = chargedUp.grid.rows.lengthOfInnerConeSection.get(Unit.Type.INCHES);
+                            color = colors.cone.coop;
+                            break;
+                        case "outerBottom":
+                            height = chargedUp.grid.rows.lengthOfBottomFieldConeSection.get(Unit.Type.INCHES);
+                            color = colors.cone.outer;
+                            break;
+                    }
+
+                    const base = {
+                        y: new Unit(currentY, Unit.Type.INCHES),
+                    }
+
+                    let assignableObj = {
+                        height: new Unit(height, Unit.Type.INCHES),
+                        color
+                    }
+
+                    locations.top.push(
+                        {
+                            y: base.y,
+                            x: new Unit(generalTopRowX, Unit.Type.INCHES),
+                            width: new Unit(topRowWidth, Unit.Type.INCHES),
+                            height: assignableObj.height,
+                            color: assignableObj.color["top"]
+                        }
+                    );
+
+                    locations.middle.push(
+                        {
+                            y: base.y,
+                            x: new Unit(middleRowX, Unit.Type.INCHES),
+                            width: new Unit(middleRowWidth, Unit.Type.INCHES),
+                            height: assignableObj.height,
+                            color: assignableObj.color["middle"]
+                        }
+                    );
+
+                    locations.bottom.push(
+                        {
+                            y: base.y,
+                            x: new Unit(bottomRowX, Unit.Type.INCHES),
+                            width: new Unit(bottomRowWidth, Unit.Type.INCHES),
+                            height: assignableObj.height,
+                            color: assignableObj.color["bottom"]
+                        }
+                    );
+                    
+                    currentY = height + currentY;
+                }
+
+                return locations;
+            },
+            getRedDimensionsList: () => {
+                let locations = {
+                    top: [],
+                    middle: [],
+                    bottom: []
+                }
+
+                const bottomRowX = chargedUp.grid.redTopLeftPosition().x.get(Unit.Type.INCHES);
+                const middleRowX = bottomRowX + chargedUp.grid.rows.bottomRowWidth.get(Unit.Type.INCHES);
+                const topRowX = middleRowX + chargedUp.grid.rows.middleRowWidth.get(Unit.Type.INCHES);
+
+                const topRowWidth = chargedUp.grid.rows.topRowWidth.get(Unit.Type.INCHES);
+                const middleRowWidth = chargedUp.grid.rows.middleRowWidth.get(Unit.Type.INCHES);
+                const bottomRowWidth = chargedUp.grid.rows.bottomRowWidth.get(Unit.Type.INCHES);
+
+                const colors = {
+                    cone: {
+                        coop: {
+                            top: "#807e7e",
+                            middle: "#696969",
+                            bottom: "#616161",
+                        },
+                        outer: {
+                            top: "#f25a88",
+                            middle: "#cf385b",
+                            bottom: "#616161",
+                        }
+                    },
+                    cube: {
+                        top: "#ebebeb",
+                        middle: "#a3a3a3",
+                        bottom: "#616161",
+                    }
+                }
+
+                const order = [
+                    "outerTop",
+                    "cube",
+                    "inner_outer",
+                    "inner_coop",
+                    "cube",
+                    "inner_coop",
+                    "inner_outer",
+                    "cube",
+                    "outerBottom"
+                ]
+
+                let currentY = chargedUp.grid.redTopLeftPosition().y.get(Unit.Type.INCHES);
+
+                for (let i = 0; i < order.length; i++) {
+                    const c = order[i];
+
+                    let height = 0;
+                    let color = "";
+
+                    switch (c) {
+                        case "outerTop":
+                            height = chargedUp.grid.rows.lengthOfTopFieldConeSection.get(Unit.Type.INCHES);
+                            color = colors.cone.outer;
+                            break;
+                        case "cube":
+                            height = chargedUp.grid.rows.lengthOfCubeSection.get(Unit.Type.INCHES);
+                            color = colors.cube;
+                            break;
+                        case "inner_outer":
+                            height = chargedUp.grid.rows.lengthOfInnerConeSection.get(Unit.Type.INCHES);
+                            color = colors.cone.outer;
+                            break;
+                        case "inner_coop":
+                            height = chargedUp.grid.rows.lengthOfInnerConeSection.get(Unit.Type.INCHES);
+                            color = colors.cone.coop;
+                            break;
+                        case "outerBottom":
+                            height = chargedUp.grid.rows.lengthOfBottomFieldConeSection.get(Unit.Type.INCHES);
+                            color = colors.cone.outer;
+                            break;
+                    }
+
+                    const base = {
+                        y: new Unit(currentY, Unit.Type.INCHES),
+                    }
+
+                    let assignableObj = {
+                        height: new Unit(height, Unit.Type.INCHES),
+                        color
+                    }
+
+                    locations.top.push(
+                        {
+                            y: base.y,
+                            x: new Unit(topRowX, Unit.Type.INCHES),
+                            width: new Unit(topRowWidth, Unit.Type.INCHES),
+                            height: assignableObj.height,
+                            color: assignableObj.color["top"]
+                        }
+                    );
+
+                    locations.middle.push(
+                        {
+                            y: base.y,
+                            x: new Unit(middleRowX, Unit.Type.INCHES),
+                            width: new Unit(middleRowWidth, Unit.Type.INCHES),
+                            height: assignableObj.height,
+                            color: assignableObj.color["middle"]
+                        }
+                    );
+
+                    locations.bottom.push(
+                        {
+                            y: base.y,
+                            x: new Unit(bottomRowX, Unit.Type.INCHES),
+                            width: new Unit(bottomRowWidth, Unit.Type.INCHES),
+                            height: assignableObj.height,
+                            color: assignableObj.color["bottom"]
+                        }
+                    );
+                    
+                    currentY = height + currentY;
+                }
+
+                return locations;
+            }
+        }
+    },
+    chargingStation: {
+        width: new Unit(4 * 12, Unit.Type.INCHES),
+        height: new Unit(8 * 12, Unit.Type.INCHES),
+        rampWidth: new Unit(13.11, Unit.Type.INCHES),
+        rampHeight: new Unit((8 * 12) + 1.25, Unit.Type.INCHES),
+        fromTopOffset: new Unit(59.39, Unit.Type.INCHES),
+        fromGridOffset: new Unit(96.75, Unit.Type.INCHES),
+        topTopLeftCornerBlueSide: () => {
+            return {
+                x: new Unit(chargedUp.grid.depth.get(Unit.Type.INCHES) + chargedUp.chargingStation.fromGridOffset.get(Unit.Type.INCHES), Unit.Type.INCHES),
+                y: new Unit(chargedUp.field.height.fullMeasure.get(Unit.Type.INCHES) - chargedUp.chargingStation.fromTopOffset.get(Unit.Type.INCHES) - chargedUp.chargingStation.height.get(Unit.Type.INCHES), Unit.Type.INCHES)
+            };
+        },
+        topTopLeftCornerRedSide: () => {
+            return {
+                x: new Unit(chargedUp.field.width.fullMeasure.get(Unit.Type.INCHES) - chargedUp.grid.depth.get(Unit.Type.INCHES) - chargedUp.chargingStation.fromGridOffset.get(Unit.Type.INCHES) - chargedUp.chargingStation.width.get(Unit.Type.INCHES), Unit.Type.INCHES),
+                y: new Unit(chargedUp.field.height.fullMeasure.get(Unit.Type.INCHES) - chargedUp.chargingStation.fromTopOffset.get(Unit.Type.INCHES) - chargedUp.chargingStation.height.get(Unit.Type.INCHES), Unit.Type.INCHES)
+            }
+        },
+
+        wireCover: {
+            offsetFromGrid: new Unit(95.25, Unit.Type.INCHES),
+            height: new Unit(59.39, Unit.Type.INCHES),
+            width: new Unit(7, Unit.Type.INCHES),
+            blueTopLeftCorner: () => {
+                return {
+                    x: new Unit(
+                        chargedUp.grid.depth.get(Unit.Type.INCHES) 
+                        + chargedUp.chargingStation.wireCover.offsetFromGrid.get(Unit.Type.INCHES)
+                        + (chargedUp.chargingStation.width.get(Unit.Type.INCHES) / 2)
+                        - (chargedUp.chargingStation.wireCover.width.get(Unit.Type.INCHES) / 2)
+                    , Unit.Type.INCHES),
+                    y: new Unit(
+                        chargedUp.field.height.fullMeasure.get(Unit.Type.INCHES)
+                        - chargedUp.chargingStation.wireCover.height.get(Unit.Type.INCHES)
+                    , Unit.Type.INCHES)
+                };
+            },
+            redTopLeftCorner: () => {
+                return {
+                    x: new Unit(
+                        chargedUp.field.width.fullMeasure.get(Unit.Type.INCHES)
+                        - chargedUp.grid.depth.get(Unit.Type.INCHES)
+                        - chargedUp.chargingStation.wireCover.offsetFromGrid.get(Unit.Type.INCHES)
+                        - (chargedUp.chargingStation.width.get(Unit.Type.INCHES) / 2)
+                        - (chargedUp.chargingStation.wireCover.width.get(Unit.Type.INCHES) / 2)
+                    , Unit.Type.INCHES),
+                    y: new Unit(
+                        chargedUp.field.height.fullMeasure.get(Unit.Type.INCHES)
+                        - chargedUp.chargingStation.wireCover.height.get(Unit.Type.INCHES)
+                    , Unit.Type.INCHES)
+                }
+            }
+        }
+    },
+    barrier: {
+        offsetFromTopOfChargingStation: new Unit(59.39, Unit.Type.INCHES),
+        width: new Unit(69.69 + 13.11, Unit.Type.INCHES), //Ramp width + distance from grid to ramp
+        height: new Unit(2, Unit.Type.INCHES),
+        blueTopLeftCorner: () => {
+            return {
+                x: new Unit(chargedUp.grid.depth.get(Unit.Type.INCHES), Unit.Type.INCHES),
+                y: new Unit(chargedUp.field.height.fullMeasure.get(Unit.Type.INCHES) - chargedUp.chargingStation.fromTopOffset.get(Unit.Type.INCHES) - chargedUp.chargingStation.height.get(Unit.Type.INCHES) - chargedUp.barrier.offsetFromTopOfChargingStation.get(Unit.Type.INCHES) - chargedUp.barrier.height.get(Unit.Type.INCHES), Unit.Type.INCHES)
+            }
+        },
+        redTopLeftCorner: () => {
+            return {
+                x: new Unit(chargedUp.field.width.fullMeasure.get(Unit.Type.INCHES) - chargedUp.grid.depth.get(Unit.Type.INCHES) - chargedUp.barrier.width.get(Unit.Type.INCHES), Unit.Type.INCHES),
+                y: new Unit(chargedUp.field.height.fullMeasure.get(Unit.Type.INCHES) - chargedUp.chargingStation.fromTopOffset.get(Unit.Type.INCHES) - chargedUp.chargingStation.height.get(Unit.Type.INCHES) - chargedUp.barrier.offsetFromTopOfChargingStation.get(Unit.Type.INCHES) - chargedUp.barrier.height.get(Unit.Type.INCHES), Unit.Type.INCHES)
+            }
+        }
+    },
+    markings: {
+        width: new Unit(2, Unit.Type.INCHES),
+        communityZone: {
+            getBlueLinePositions: () => {
+                const width = chargedUp.markings.width.get(Unit.Type.INCHES);
+
+                const start = {
+                    x: chargedUp.barrier.blueTopLeftCorner().x.get(Unit.Type.INCHES) + (width / 2) + chargedUp.barrier.width.get(Unit.Type.INCHES),
+                    y: chargedUp.barrier.blueTopLeftCorner().y.get(Unit.Type.INCHES) + (chargedUp.barrier.height.get(Unit.Type.INCHES) / 2)
+                }
+
+                const point1 = {
+                    x: chargedUp.barrier.blueTopLeftCorner().x.get(Unit.Type.INCHES) + (width / 2) + chargedUp.barrier.width.get(Unit.Type.INCHES),
+                    y: chargedUp.chargingStation.topTopLeftCornerBlueSide().y.get(Unit.Type.INCHES) - (width / 2)
+                }
+
+                const point2 = {
+                    x: chargedUp.chargingStation.topTopLeftCornerBlueSide().x.get(Unit.Type.INCHES) + (width / 2) + chargedUp.chargingStation.width.get(Unit.Type.INCHES) + chargedUp.chargingStation.rampWidth.get(Unit.Type.INCHES),
+                    y: chargedUp.chargingStation.topTopLeftCornerBlueSide().y.get(Unit.Type.INCHES) - (width / 2)
+                }
+
+                const point3 = {
+                    x: chargedUp.chargingStation.topTopLeftCornerBlueSide().x.get(Unit.Type.INCHES) + (width / 2) + chargedUp.chargingStation.width.get(Unit.Type.INCHES) + chargedUp.chargingStation.rampWidth.get(Unit.Type.INCHES),
+                    y: chargedUp.field.height.fullMeasure.get(Unit.Type.INCHES)
+                }
+
+                const prePoses = [start, point1, point2, point3];
+
+                //Convert to inches
+                let poses = [];
+
+                for (let i = 0; i < prePoses.length; i++) {
+                    poses.push({
+                        x: new Unit(prePoses[i].x, Unit.Type.INCHES),
+                        y: new Unit(prePoses[i].y, Unit.Type.INCHES)
+                    })
+                }
+
+                return poses;
+            },
+            getRedLinePositions: () => {
+                const width = chargedUp.markings.width.get(Unit.Type.INCHES);
+                
+                const start = {
+                    x: chargedUp.barrier.redTopLeftCorner().x.get(Unit.Type.INCHES) - (width / 2),
+                    y: chargedUp.barrier.redTopLeftCorner().y.get(Unit.Type.INCHES) + (chargedUp.barrier.height.get(Unit.Type.INCHES) / 2)
+                }
+
+                const point1 = {
+                    x: chargedUp.barrier.redTopLeftCorner().x.get(Unit.Type.INCHES) - (width / 2),
+                    y: chargedUp.chargingStation.topTopLeftCornerRedSide().y.get(Unit.Type.INCHES) - (width / 2)
+                }
+
+                const point2 = {
+                    x: chargedUp.chargingStation.topTopLeftCornerRedSide().x.get(Unit.Type.INCHES) - (width / 2) - chargedUp.chargingStation.rampWidth.get(Unit.Type.INCHES),
+                    y: chargedUp.chargingStation.topTopLeftCornerRedSide().y.get(Unit.Type.INCHES) - (width / 2)
+                }
+
+                const point3 = {
+                    x: chargedUp.chargingStation.topTopLeftCornerRedSide().x.get(Unit.Type.INCHES) - (width / 2) - chargedUp.chargingStation.rampWidth.get(Unit.Type.INCHES),
+                    y: chargedUp.field.height.fullMeasure.get(Unit.Type.INCHES)
+                }
+
+                const prePoses = [start, point1, point2, point3];
+
+                //Convert to inches
+                let poses = [];
+
+                for (let i = 0; i < prePoses.length; i++) {
+                    poses.push({
+                        x: new Unit(prePoses[i].x, Unit.Type.INCHES),
+                        y: new Unit(prePoses[i].y, Unit.Type.INCHES)
+                    })
+                }
+
+                return poses;
+            }
+        },
+        substationZone: {
+            getRedLinePositions: () => {
+                const width = chargedUp.markings.width.get(Unit.Type.INCHES);
+
+                const start = {
+                    x: chargedUp.barrier.blueTopLeftCorner().x.get(Unit.Type.INCHES) + (width / 2) + chargedUp.barrier.width.get(Unit.Type.INCHES),
+                    y: chargedUp.barrier.blueTopLeftCorner().y.get(Unit.Type.INCHES) + (chargedUp.barrier.height.get(Unit.Type.INCHES) / 2)
+                };
+
+                const point1 = {
+                    x: chargedUp.barrier.blueTopLeftCorner().x.get(Unit.Type.INCHES) + (width / 2) + chargedUp.barrier.width.get(Unit.Type.INCHES),
+                    y: 50.50,
+                }
+
+                const point2 = {
+                    x: chargedUp.field.width.halfMeasure.get(Unit.Type.INCHES) - 61.36,
+                    y: 50.50,
+                }
+
+                const point3 = {
+                    x: chargedUp.field.width.halfMeasure.get(Unit.Type.INCHES) - 61.36,
+                    y: 0,
+                }
+
+                const prePoses = [start, point1, point2, point3];
+
+                //Convert to inches
+                let poses = [];
+
+                for (let i = 0; i < prePoses.length; i++) {
+                    poses.push({
+                        x: new Unit(prePoses[i].x, Unit.Type.INCHES),
+                        y: new Unit(prePoses[i].y, Unit.Type.INCHES)
+                    })
+                }
+
+                return poses;
+            },
+
+            getBlueLinePositions() {
+                const width = chargedUp.markings.width.get(Unit.Type.INCHES);
+
+                const start = {
+                    x: chargedUp.barrier.redTopLeftCorner().x.get(Unit.Type.INCHES) - (width / 2),
+                    y: chargedUp.barrier.redTopLeftCorner().y.get(Unit.Type.INCHES) + (chargedUp.barrier.height.get(Unit.Type.INCHES) / 2)
+                };
+
+                const point1 = {
+                    x: chargedUp.barrier.redTopLeftCorner().x.get(Unit.Type.INCHES) - (width / 2),
+                    y: 50.50,
+                }
+
+                const point2 = {
+                    x: chargedUp.field.width.halfMeasure.get(Unit.Type.INCHES) + 61.36,
+                    y: 50.50,
+                }
+
+                const point3 = {
+                    x: chargedUp.field.width.halfMeasure.get(Unit.Type.INCHES) + 61.36,
+                    y: 0,
+                }
+
+                const prePoses = [start, point1, point2, point3];
+
+                //Convert to inches
+                let poses = [];
+
+                for (let i = 0; i < prePoses.length; i++) {
+                    poses.push({
+                        x: new Unit(prePoses[i].x, Unit.Type.INCHES),
+                        y: new Unit(prePoses[i].y, Unit.Type.INCHES)
+                    })
+                }
+
+                return poses;
+            }
+        }
+    },
+    substation: {
+        doubleSubstation: {
+            height: () => {
+                return new Unit(chargedUp.grid.blueTopLeftPosition().y.get(Unit.Type.INCHES), Unit.Type.INCHES)
+            },
+            depth: new Unit(13.94, Unit.Type.INCHES),
+
+            redTopLeftCorner: () => {
+                return {
+                    x: new Unit(0, Unit.Type.INCHES),
+                    y: new Unit(0, Unit.Type.INCHES)
+                }
+            },
+            blueTopLeftCorner: () => {
+                return {
+                    x: new Unit(chargedUp.field.width.fullMeasure.get(Unit.Type.INCHES) - chargedUp.substation.doubleSubstation.depth.get(Unit.Type.INCHES), Unit.Type.INCHES),
+                    y: new Unit(0, Unit.Type.INCHES)
+                }
+            }
+        }
+    },
+    aprilTags: [
+        new AprilTag(
+            1,
+            new Unit(610.77, Unit.Type.INCHES), new Unit(42.19, Unit.Type.INCHES), new Unit(18.22, Unit.Type.INCHES),
+            new Angle(180, Angle.Type.DEGREES),
+            defaultAprilTagSize,
+            true
+        ),
+        new AprilTag(
+            2,
+            new Unit(610.77, Unit.Type.INCHES), new Unit(108.19, Unit.Type.INCHES), new Unit(18.22, Unit.Type.INCHES),
+            new Angle(180, Angle.Type.DEGREES),
+            defaultAprilTagSize,
+            true
+        ),
+        new AprilTag(
+            3,
+            new Unit(610.77, Unit.Type.INCHES), new Unit(174.19, Unit.Type.INCHES), new Unit(18.22, Unit.Type.INCHES),
+            new Angle(180, Angle.Type.DEGREES),
+            defaultAprilTagSize,
+            true
+        ),
+        new AprilTag(
+            4,
+            new Unit(636.69, Unit.Type.INCHES), new Unit(265.74, Unit.Type.INCHES), new Unit(27.38, Unit.Type.INCHES),
+            new Angle(180, Angle.Type.DEGREES),
+            defaultAprilTagSize,
+            true
+        ),
+        new AprilTag(
+            5,
+            new Unit(14.25, Unit.Type.INCHES), new Unit(265.74, Unit.Type.INCHES), new Unit(27.38, Unit.Type.INCHES),
+            new Angle(0, Angle.Type.DEGREES),
+            defaultAprilTagSize,
+            true
+        ),
+        new AprilTag(
+            6,
+            new Unit(40.45, Unit.Type.INCHES), new Unit(174.19, Unit.Type.INCHES), new Unit(18.22, Unit.Type.INCHES),
+            new Angle(0, Angle.Type.DEGREES),
+            defaultAprilTagSize,
+            true
+        ),
+        new AprilTag(
+            7,
+            new Unit(40.45, Unit.Type.INCHES), new Unit(108.19, Unit.Type.INCHES), new Unit(18.22, Unit.Type.INCHES),
+            new Angle(0, Angle.Type.DEGREES),
+            defaultAprilTagSize,
+            true
+        ),
+        new AprilTag(
+            8,
+            new Unit(40.45, Unit.Type.INCHES), new Unit(42.19, Unit.Type.INCHES), new Unit(18.22, Unit.Type.INCHES),
+            new Angle(0, Angle.Type.DEGREES),
+            defaultAprilTagSize,
+            true
+        ),
+    ],
+}
+
 const inchToPixel = Object.keys(global).includes("custom_inchtopixel") ? global.custom_inchtopixel : 1; //Every x inches in x pixels
 //to convert inches to pixels, multiply by inchToPixel
 
@@ -246,81 +906,134 @@ class Field extends React.Component {
 
         const simulationType = props.simtype || Field.SimulType.Field;
 
-        //Create balls
-        let balls = [];
-        const ballRadius = rapidReact.balls.radiusFromCenter.getcu(i2p, Unit.Type.INCHES);
-
-        let i = 0;
-        global.physObjs = [];
-        const launchPadStart = new Angle(-66.5, Angle.Degrees).get(Angle.Radians) + Math.PI / 2; //+-3.00° btw
-        for (let ballPoint of rapidReact.balls.points) {
-            let ballPos = {
-                x: ballRadius * Math.sin(ballPoint.get(Angle.Radians) + launchPadStart) + rapidReact.field.width.halfMeasure.getcu(i2p, Unit.Type.INCHES),
-                y: ballRadius * Math.cos(ballPoint.get(Angle.Radians) + launchPadStart) + rapidReact.field.height.halfMeasure.getcu(i2p, Unit.Type.INCHES)
-            }
-
-            balls.push(new Ball(
-                ballPos.x,
-                ballPos.y,
-                i % 2 == 0 ? "red" : "blue",
-                rapidReact.balls.size.getcu(i2p, Unit.Type.INCHES) / 2
-            ));
-            i++;
-        }
-        
-        //Create physical objects for the field
         let physicalObjects = [];
 
-        const launchPadStart2 = new Angle(-68.5, Angle.Degrees).get(Angle.Radians); //+-3.00° btw
-        for (let i = 0; i < Math.PI; i += Math.PI / 2) {
-            //Spitters
-            const adjustment = Math.PI / 4 + new Angle(0, Angle.Degrees).get(Angle.Radians);
-            // rapidReact.hubs.spitters.getPositions(new Angle(i + launchPadStart2 + adjustment, Angle.Radians), {
-            //     x: 0 * Math.sin(i + launchPadStart2 + adjustment) + rapidReact.field.width.halfMeasure.getcu(inchToPixel, Unit.Type.INCHES),
-            //     y: 0 * Math.cos(i + launchPadStart2 + adjustment) + rapidReact.field.height.halfMeasure.getcu(inchToPixel, Unit.Type.INCHES)
-            // });
+        global.physObjs = [];
+
+        //Create balls (rapid react specific)
+        let balls = [];
+
+        //Create scoring system (charged up specific)
+        let chargedUpScoring = {};
+
+        if ((Object.keys(this.props || {}).includes("game") ? this.props.game : "rapidReact") == "rapidReact") {
+            const ballRadius = rapidReact.balls.radiusFromCenter.getcu(i2p, Unit.Type.INCHES);
+
+            let i = 0;
+            const launchPadStart = new Angle(-66.5, Angle.Degrees).get(Angle.Radians) + Math.PI / 2; //+-3.00° btw
+            for (let ballPoint of rapidReact.balls.points) {
+                let ballPos = {
+                    x: ballRadius * Math.sin(ballPoint.get(Angle.Radians) + launchPadStart) + rapidReact.field.width.halfMeasure.getcu(i2p, Unit.Type.INCHES),
+                    y: ballRadius * Math.cos(ballPoint.get(Angle.Radians) + launchPadStart) + rapidReact.field.height.halfMeasure.getcu(i2p, Unit.Type.INCHES)
+                }
+
+                balls.push(new Ball(
+                    ballPos.x,
+                    ballPos.y,
+                    i % 2 == 0 ? "red" : "blue",
+                    rapidReact.balls.size.getcu(i2p, Unit.Type.INCHES) / 2
+                ));
+                i++;
+            }
+            
+            //Create physical objects for the field
+
+            const launchPadStart2 = new Angle(-68.5, Angle.Degrees).get(Angle.Radians); //+-3.00° btw
+            for (let i = 0; i < Math.PI; i += Math.PI / 2) {
+                //Spitters
+                const adjustment = Math.PI / 4 + new Angle(0, Angle.Degrees).get(Angle.Radians);
+                // rapidReact.hubs.spitters.getPositions(new Angle(i + launchPadStart2 + adjustment, Angle.Radians), {
+                //     x: 0 * Math.sin(i + launchPadStart2 + adjustment) + rapidReact.field.width.halfMeasure.getcu(inchToPixel, Unit.Type.INCHES),
+                //     y: 0 * Math.cos(i + launchPadStart2 + adjustment) + rapidReact.field.height.halfMeasure.getcu(inchToPixel, Unit.Type.INCHES)
+                // });
+
+                physicalObjects.push(new Physical({
+                    x: 0 * Math.sin(i + launchPadStart2 + adjustment) + rapidReact.field.width.halfMeasure.getcu(i2p, Unit.Type.INCHES),
+                    y: 0 * Math.cos(i + launchPadStart2 + adjustment) + rapidReact.field.height.halfMeasure.getcu(i2p, Unit.Type.INCHES)
+                }, Physical.Type.RECTANGLE, {
+                    w: rapidReact.hubs.spitters.width.getcu(i2p, Unit.Type.INCHES),
+                    h: rapidReact.hubs.spitters.height.getcu(i2p, Unit.Type.INCHES) * 2
+                }, new Angle(i + launchPadStart2 + adjustment, Angle.Radians)));
+            }
+
+            //Walls
+            physicalObjects.push(new Physical({
+                x: -51,
+                y: rapidReact.field.height.halfMeasure.getcu(i2p, Unit.Type.INCHES)
+            }, Physical.Type.RECTANGLE, {
+                w: 100,
+                h: rapidReact.field.height.fullMeasure.getcu(i2p, Unit.Type.INCHES)
+            }, new Angle(0, Angle.Radians)));
 
             physicalObjects.push(new Physical({
-                x: 0 * Math.sin(i + launchPadStart2 + adjustment) + rapidReact.field.width.halfMeasure.getcu(i2p, Unit.Type.INCHES),
-                y: 0 * Math.cos(i + launchPadStart2 + adjustment) + rapidReact.field.height.halfMeasure.getcu(i2p, Unit.Type.INCHES)
+                x: rapidReact.field.width.halfMeasure.getcu(i2p, Unit.Type.INCHES),
+                y: -51
             }, Physical.Type.RECTANGLE, {
-                w: rapidReact.hubs.spitters.width.getcu(i2p, Unit.Type.INCHES),
-                h: rapidReact.hubs.spitters.height.getcu(i2p, Unit.Type.INCHES) * 2
-            }, new Angle(i + launchPadStart2 + adjustment, Angle.Radians)));
+                w: rapidReact.field.width.fullMeasure.getcu(i2p, Unit.Type.INCHES),
+                h: 100
+            }, new Angle(0, Angle.Radians)));
+
+            physicalObjects.push(new Physical({
+                x: rapidReact.field.width.halfMeasure.getcu(i2p, Unit.Type.INCHES),
+                y: rapidReact.field.height.fullMeasure.getcu(i2p, Unit.Type.INCHES) + 51
+            }, Physical.Type.RECTANGLE, {
+                w: rapidReact.field.width.fullMeasure.getcu(i2p, Unit.Type.INCHES),
+                h: 100
+            }, new Angle(0, Angle.Radians)));
+
+            physicalObjects.push(new Physical({
+                x: rapidReact.field.width.fullMeasure.getcu(i2p, Unit.Type.INCHES) + 51,
+                y: rapidReact.field.height.halfMeasure.getcu(i2p, Unit.Type.INCHES)
+            }, Physical.Type.RECTANGLE, {
+                w: 100,
+                h: rapidReact.field.height.fullMeasure.getcu(i2p, Unit.Type.INCHES)
+            }, new Angle(0, Angle.Radians)));
+        } else if (this.props.game == "chargedUp") {
+            chargedUpScoring = {
+                blue: {
+                    /** 
+                     * This is based on the field diagrams. If looking from grid from 
+                     * the center, the bottom would be the left and the top would be the right.
+                    */
+                    bottomOuterGrid: {
+                        top: new Array(3).fill(0),
+                        middle: new Array(3).fill(0),
+                        bottom: new Array(3).fill(0)
+                    },
+                    coopGrid: {
+                        top: new Array(3).fill(0),
+                        middle: new Array(3).fill(0),
+                        bottom: new Array(3).fill(0)
+                    },
+                    topOuterGrid: {
+                        top: new Array(3).fill(0),
+                        middle: new Array(3).fill(0),
+                        bottom: new Array(3).fill(0)
+                    }
+                },
+                red: {
+                    /**
+                     * This is based on the field diagrams. If looking from grid from
+                     * the center, the bottom would be the right and the top would be the left.
+                     */
+                    bottomOuterGrid: {
+                        top: new Array(3).fill(0),
+                        middle: new Array(3).fill(0),
+                        bottom: new Array(3).fill(0)
+                    },
+                    coopGrid: {
+                        top: new Array(3).fill(0),
+                        middle: new Array(3).fill(0),
+                        bottom: new Array(3).fill(0)
+                    },
+                    topOuterGrid: {
+                        top: new Array(3).fill(0),
+                        middle: new Array(3).fill(0),
+                        bottom: new Array(3).fill(0)
+                    }
+                }
+            }
         }
-
-        //Walls
-        physicalObjects.push(new Physical({
-            x: -51,
-            y: rapidReact.field.height.halfMeasure.getcu(i2p, Unit.Type.INCHES)
-        }, Physical.Type.RECTANGLE, {
-            w: 100,
-            h: rapidReact.field.height.fullMeasure.getcu(i2p, Unit.Type.INCHES)
-        }, new Angle(0, Angle.Radians)));
-
-        physicalObjects.push(new Physical({
-            x: rapidReact.field.width.halfMeasure.getcu(i2p, Unit.Type.INCHES),
-            y: -51
-        }, Physical.Type.RECTANGLE, {
-            w: rapidReact.field.width.fullMeasure.getcu(i2p, Unit.Type.INCHES),
-            h: 100
-        }, new Angle(0, Angle.Radians)));
-
-        physicalObjects.push(new Physical({
-            x: rapidReact.field.width.halfMeasure.getcu(i2p, Unit.Type.INCHES),
-            y: rapidReact.field.height.fullMeasure.getcu(i2p, Unit.Type.INCHES) + 51
-        }, Physical.Type.RECTANGLE, {
-            w: rapidReact.field.width.fullMeasure.getcu(i2p, Unit.Type.INCHES),
-            h: 100
-        }, new Angle(0, Angle.Radians)));
-
-        physicalObjects.push(new Physical({
-            x: rapidReact.field.width.fullMeasure.getcu(i2p, Unit.Type.INCHES) + 51,
-            y: rapidReact.field.height.halfMeasure.getcu(i2p, Unit.Type.INCHES)
-        }, Physical.Type.RECTANGLE, {
-            w: 100,
-            h: rapidReact.field.height.fullMeasure.getcu(i2p, Unit.Type.INCHES)
-        }, new Angle(0, Angle.Radians)));
 
         //Clear physical objects if in planning mode
         if (simulationType == Field.SimulType.Planning) {
@@ -332,7 +1045,7 @@ class Field extends React.Component {
 
         //Save to state
         this.state = {
-            game: "rapidReact",
+            game: "chargedUp",
             rapidReact: {
                 scores: {
                     blue: 0,
@@ -340,7 +1053,12 @@ class Field extends React.Component {
                 },
                 balls,
                 physicalObjects,
-                mouseBall: new Ball(0, 0, "black", rapidReact.balls.size.getcu(i2p, Unit.Type.INCHES) / 2),
+                mouseBall: new Ball(0, 0, "black", new Unit(9.5, Unit.Type.INCHES).getcu(i2p, Unit.Type.INCHES) / 2),
+            },
+            chargedUp: {
+                scores: chargedUpScoring,
+                physicalObjects,
+                mouseBall: new Ball(0, 0, "black", new Unit(9.5, Unit.Type.INCHES).getcu(i2p, Unit.Type.INCHES) / 2),
             },
             aprilTags: new AprilTagManager(i2p),
             robotDimensions: {
@@ -676,11 +1394,15 @@ class Field extends React.Component {
             mouse: {x: 0, y: 0}
         }
 
+        if (this.state.game == "chargedUp") {
+            this.state.aprilTags = new AprilTagManager(i2p, chargedUp.aprilTags, true);
+        }
+
         if (simulationType == Field.SimulType.Planning) { 
             //TODO: Add this in when releasing
-            window.onbeforeunload = () => {
-                return this.state.positions > 0;
-            };
+            // window.onbeforeunload = () => {
+            //     return this.state.positions.length > 0;
+            // };
 
             this.state.keyListeners.push(this.state.timeline);
 
@@ -708,6 +1430,16 @@ class Field extends React.Component {
             }
 
             window.loadPathLocal = (pathName="default") => {
+                if (pathName == "get") {
+                    let pathNameList = [];
+                    const paths = load("path");
+                    for (let key of Object.keys(paths)) {
+                        pathNameList.push(key);
+                    }
+                    alert("Path names: " + pathNameList.join(", "));
+                    return;
+                }
+
                 let pathString = load(`path/${pathName}`)
 
                 if (pathName.startsWith("legacy ")) {
@@ -744,6 +1476,328 @@ class Field extends React.Component {
         })
         this.state.planningMenu = open;
         this.state.planningMenuJustOpened = true;
+    }
+
+    chargedUp(ctx, frameCount, rel, canvas, mouse) {
+        const width = canvas.width;
+        const height = canvas.height;
+        const i2p = this.state.i2p;
+
+        //Draw background
+        ctx.fillStyle = "gray";
+        ctx.fillRect(0, 0, width, height);
+
+        //Draw middle line
+        ctx.strokeStyle = "white";
+        ctx.lineWidth = 2;
+
+        ctx.beginPath();
+        ctx.moveTo(width / 2, 0);
+        ctx.lineTo(width / 2, height);
+        ctx.stroke();
+
+        //Draw markings
+        //draw community zone lines for blue
+        ctx.lineWidth = chargedUp.markings.width.getcu(i2p, Unit.Type.INCHES);
+
+
+        ctx.strokeStyle = "blue";
+
+        ctx.beginPath();
+
+        let first = true;
+
+        ctx.moveTo(
+            chargedUp.markings.communityZone.getBlueLinePositions()[0].x.getcu(i2p, Unit.Type.INCHES), 
+            chargedUp.markings.communityZone.getBlueLinePositions()[0].y.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        for (let p of chargedUp.markings.communityZone.getBlueLinePositions()) {
+            if (first) { first = false; continue; }
+
+            ctx.lineTo(
+                p.x.getcu(i2p, Unit.Type.INCHES),
+                p.y.getcu(i2p, Unit.Type.INCHES)
+            );
+        }
+
+        ctx.stroke();
+
+        //draw substation zone lines for blue
+        
+        ctx.beginPath();
+
+        first = true;
+
+        ctx.moveTo(
+            chargedUp.markings.substationZone.getBlueLinePositions()[0].x.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.markings.substationZone.getBlueLinePositions()[0].y.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        for (let p of chargedUp.markings.substationZone.getBlueLinePositions()) {
+            if (first) { first = false; continue; }
+
+            ctx.lineTo(
+                p.x.getcu(i2p, Unit.Type.INCHES),
+                p.y.getcu(i2p, Unit.Type.INCHES)
+            );
+        }
+
+        ctx.stroke();
+
+        //draw red lines
+        ctx.strokeStyle = "red";
+
+        //draw red community zone lines
+        ctx.beginPath();
+
+        first = true;
+
+        ctx.moveTo(
+            chargedUp.markings.communityZone.getRedLinePositions()[0].x.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.markings.communityZone.getRedLinePositions()[0].y.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        for (let p of chargedUp.markings.communityZone.getRedLinePositions()) {
+            if (first) { first = false; continue; }
+
+            ctx.lineTo(
+                p.x.getcu(i2p, Unit.Type.INCHES),
+                p.y.getcu(i2p, Unit.Type.INCHES)
+            );
+
+        }
+
+        ctx.stroke();
+
+        //draw red substation zone lines
+        ctx.beginPath();
+
+        first = true;
+
+        ctx.moveTo(
+            chargedUp.markings.substationZone.getRedLinePositions()[0].x.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.markings.substationZone.getRedLinePositions()[0].y.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        for (let p of chargedUp.markings.substationZone.getRedLinePositions()) {
+            if (first) { first = false; continue; }
+
+            ctx.lineTo(
+                p.x.getcu(i2p, Unit.Type.INCHES),
+                p.y.getcu(i2p, Unit.Type.INCHES)
+            );
+
+        }
+
+        ctx.stroke();
+
+
+        ctx.lineWidth = 1;
+        ctx.strokeStyle = "black";
+
+        //draw grid area
+        ctx.fillStyle = "#c1d7e8";
+        ctx.fillRect(
+            chargedUp.grid.blueTopLeftPosition().x.getcu(i2p, Unit.Type.INCHES), 
+            chargedUp.grid.blueTopLeftPosition().y.getcu(i2p, Unit.Type.INCHES), 
+            chargedUp.grid.depth.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.grid.length.getcu(i2p, Unit.Type.INCHES)
+        );
+        
+        ctx.fillStyle = "#e3b1bc";
+        ctx.fillRect(
+            chargedUp.grid.redTopLeftPosition().x.getcu(i2p, Unit.Type.INCHES), 
+            chargedUp.grid.redTopLeftPosition().y.getcu(i2p, Unit.Type.INCHES), 
+            chargedUp.grid.depth.getcu(i2p, Unit.Type.INCHES), 
+            chargedUp.grid.length.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        //draw game piece starts
+        ctx.fillStyle = "black";
+
+        //draw blue game piece starts
+        for (let blueGamePieceStart of chargedUp.gamePieceStarts.blue()) {
+            ctx.beginPath();
+            ctx.arc(
+                blueGamePieceStart.x.getcu(i2p, Unit.Type.INCHES), 
+                blueGamePieceStart.y.getcu(i2p, Unit.Type.INCHES), 
+                chargedUp.gamePieceStarts.radius.getcu(i2p, Unit.Type.INCHES),
+                0, 2 * Math.PI
+            );
+            ctx.fill();
+        }
+        
+        //draw red game piece starts
+        for (let redGamePieceStart of chargedUp.gamePieceStarts.red()) {
+            ctx.beginPath();
+            ctx.arc(
+                redGamePieceStart.x.getcu(i2p, Unit.Type.INCHES), 
+                redGamePieceStart.y.getcu(i2p, Unit.Type.INCHES), 
+                chargedUp.gamePieceStarts.radius.getcu(i2p, Unit.Type.INCHES),
+                0, 2 * Math.PI
+            );
+            ctx.fill();
+        }
+
+        //draw charging stations
+        ctx.fillStyle = "#dbdbdb";
+        //draw blue charging station
+        ctx.fillRect(
+            chargedUp.chargingStation.topTopLeftCornerBlueSide().x.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.topTopLeftCornerBlueSide().y.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.width.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.height.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        //draw red charging station
+        ctx.fillRect(
+            chargedUp.chargingStation.topTopLeftCornerRedSide().x.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.topTopLeftCornerRedSide().y.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.width.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.height.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        //draw charging station ramps
+        ctx.fillStyle = "#bfbfbf";
+
+        const differenceInHeights = Math.abs(chargedUp.chargingStation.height.getcu(i2p, Unit.Type.INCHES) - chargedUp.chargingStation.rampHeight.getcu(i2p, Unit.Type.INCHES));
+
+        //draw ramps on blue side
+        ctx.fillRect(
+            chargedUp.chargingStation.topTopLeftCornerBlueSide().x.getcu(i2p, Unit.Type.INCHES) - chargedUp.chargingStation.rampWidth.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.topTopLeftCornerBlueSide().y.getcu(i2p, Unit.Type.INCHES) - (differenceInHeights / 2),
+            chargedUp.chargingStation.rampWidth.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.rampHeight.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        ctx.fillRect(
+            chargedUp.chargingStation.topTopLeftCornerBlueSide().x.getcu(i2p, Unit.Type.INCHES) + chargedUp.chargingStation.width.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.topTopLeftCornerBlueSide().y.getcu(i2p, Unit.Type.INCHES) - (differenceInHeights / 2),
+            chargedUp.chargingStation.rampWidth.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.rampHeight.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        //draw ramps on red side
+        ctx.fillRect(
+            chargedUp.chargingStation.topTopLeftCornerRedSide().x.getcu(i2p, Unit.Type.INCHES) - chargedUp.chargingStation.rampWidth.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.topTopLeftCornerRedSide().y.getcu(i2p, Unit.Type.INCHES) - (differenceInHeights / 2),
+            chargedUp.chargingStation.rampWidth.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.rampHeight.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        ctx.fillRect(
+            chargedUp.chargingStation.topTopLeftCornerRedSide().x.getcu(i2p, Unit.Type.INCHES) + chargedUp.chargingStation.width.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.topTopLeftCornerRedSide().y.getcu(i2p, Unit.Type.INCHES) - (differenceInHeights / 2),
+            chargedUp.chargingStation.rampWidth.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.rampHeight.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        //draw wire covers
+        ctx.fillStyle = "#1c1c1c";
+
+        //blue side wire cover
+        ctx.fillRect(
+            chargedUp.chargingStation.wireCover.blueTopLeftCorner().x.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.wireCover.blueTopLeftCorner().y.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.wireCover.width.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.wireCover.height.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        //red side wire cover
+        ctx.fillRect(
+            chargedUp.chargingStation.wireCover.redTopLeftCorner().x.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.wireCover.redTopLeftCorner().y.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.wireCover.width.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.chargingStation.wireCover.height.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        //draw barriers
+        ctx.fillStyle = "#ededed";
+
+        //draw blue side barrier
+        ctx.fillRect(
+            chargedUp.barrier.blueTopLeftCorner().x.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.barrier.blueTopLeftCorner().y.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.barrier.width.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.barrier.height.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        //draw red side barrier
+        ctx.fillRect(
+            chargedUp.barrier.redTopLeftCorner().x.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.barrier.redTopLeftCorner().y.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.barrier.width.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.barrier.height.getcu(i2p, Unit.Type.INCHES)
+        );
+
+        //draw double substation
+        ctx.fillStyle = "#303030";
+            
+        //draw blue side double substation
+        ctx.fillRect(
+            chargedUp.substation.doubleSubstation.blueTopLeftCorner().x.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.substation.doubleSubstation.blueTopLeftCorner().y.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.substation.doubleSubstation.depth.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.substation.doubleSubstation.height().getcu(i2p, Unit.Type.INCHES)
+        );
+
+        //draw red side double substation
+        ctx.fillRect(
+            chargedUp.substation.doubleSubstation.redTopLeftCorner().x.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.substation.doubleSubstation.redTopLeftCorner().y.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.substation.doubleSubstation.depth.getcu(i2p, Unit.Type.INCHES),
+            chargedUp.substation.doubleSubstation.height().getcu(i2p, Unit.Type.INCHES)
+        );
+
+        //draw grid details
+        ctx.fillStyle = "#1c1c1c";
+            
+        //draw blue side grid details
+        const blueSideGridDetails = chargedUp.grid.rows.getBlueDimensionsList();
+        
+        for (let row of Object.keys(blueSideGridDetails)) {
+            for (let p of blueSideGridDetails[row]) {
+                ctx.fillStyle = p.color;
+
+                ctx.fillRect(
+                    p.x.getcu(i2p, Unit.Type.INCHES),
+                    p.y.getcu(i2p, Unit.Type.INCHES),
+                    p.width.getcu(i2p, Unit.Type.INCHES),
+                    p.height.getcu(i2p, Unit.Type.INCHES)
+                );
+            }
+        }
+
+        //draw red side grid details
+        const redSideGridDetails = chargedUp.grid.rows.getRedDimensionsList();
+        
+        for (let row of Object.keys(redSideGridDetails)) {
+            for (let p of redSideGridDetails[row]) {
+                ctx.fillStyle = p.color;
+
+                ctx.fillRect(
+                    p.x.getcu(i2p, Unit.Type.INCHES),
+                    p.y.getcu(i2p, Unit.Type.INCHES),
+                    p.width.getcu(i2p, Unit.Type.INCHES),
+                    p.height.getcu(i2p, Unit.Type.INCHES)
+                );
+            }
+        }
+        
+        
+        //General stuff
+        this.generalDraw(ctx, frameCount, rel, canvas, mouse)
+
+        ctx.fillStyle = "black";
+        ctx.beginPath();
+        ctx.arc(mouse.x, mouse.y, this.state.simulationType == Field.SimulType.Field ? 5 : 2, 0, 2 * Math.PI);
+        ctx.fill();
+        
+        //write mouse pos
+        // ctx.fillStyle = "black";
+        // ctx.font = "20px Arial";
+        // ctx.fillText(`x: ${mouse.x}, y: ${mouse.y}`, 10, 20);
     }
 
     rapidReact(ctx, frameCount, rel, canvas, mouse) {
@@ -1193,12 +2247,25 @@ class Field extends React.Component {
                         ctx.strokeStyle = "rgb(220, 40, 187)";
                         ctx.lineWidth = 2;
 
-                        this.state.aprilTags.tags.forEach(tag => {
-                            ctx.beginPath();
-                            ctx.moveTo(tag.x, tag.y)
-                            ctx.lineTo(currentPos.x, currentPos.y)
-                            ctx.stroke();
-                        })
+                        let noDisplayTag = false;
+
+                        if (Object.keys(window).includes("no_tag_display")) {
+                            noDisplayTag = window["no_tag_display"];
+                        }
+
+                        if (!noDisplayTag) {
+                            this.state.aprilTags.tags.forEach(tag => {
+                                ctx.beginPath();
+                                const tagX = typeof tag.x == "object" ? tag.x.getcu(i2p, Unit.Type.INCHES) : tag.x;
+                                const tagY = typeof tag.y == "object" ? tag.y.getcu(i2p, Unit.Type.INCHES) : tag.y;
+    
+                                ctx.moveTo(tagX, tagY)
+                                ctx.lineTo(currentPos.x, currentPos.y)
+                                ctx.stroke();
+                            })
+                        }
+                        
+                        
 
                         ctx.lineWidth = 1;
                         ctx.strokeStyle = "black";
@@ -1245,8 +2312,12 @@ class Field extends React.Component {
 
                 const options = this.state.planningMenuOptions.filter(option => option.renderCondition())
 
+                let doingEasierSee = false;
+
                 if (pmPos.y + options.length * 30 > ctx.canvas.height) {
                     pmPos.y -= options.length * 30;
+
+                    doingEasierSee = true;
                 }
 
                 ctx.fillStyle = "#dd28ed";
@@ -1266,7 +2337,7 @@ class Field extends React.Component {
                     ctx.fillText(`${options[i].name}`, pmPos.x + 10, pmPos.y + i * 30 + 22);
 
                     if (inBox && mouse.down) {
-                        options[i].action(pmPos.x, pmPos.y);
+                        options[i].action(pmPos.x, pmPos.y + (doingEasierSee ? options.length * 30 : 0));
                         this.togglePlanningMenu();
 
                         this.state.generatedPath = this.state.planner.generateBezierCurve({
@@ -1297,7 +2368,6 @@ class Field extends React.Component {
                 player.update(ctx, i2p, this.state[this.state.game].physicalObjects.concat(this.state[this.state.game].balls), this.state.players)
             }
         }
-
 
         //Set the mouse pos
         this.state.mouse = {x: mouse.x, y: mouse.y}
@@ -1433,15 +2503,18 @@ class Field extends React.Component {
     render() {
         const i2p = this.state.i2p;
 
-        let game = rapidReact;
+        let game = chargedUp;
 
         if (Object.keys(this.props || {}).includes("game")) {
             switch (this.params.game) {
                 case "rapidReact":
                     game = rapidReact;
                     break;
+                case "chargedUp":
+                    game = chargedUp;
+                    break;
                 default:
-                    game = rapidReact;
+                    game = chargedUp;
             }
         }
 
@@ -1451,7 +2524,7 @@ class Field extends React.Component {
                 <Canvas id="field" 
                     width={game.field.width.fullMeasure.getcu(i2p, Unit.Type.INCHES)} 
                     height={game.field.height.fullMeasure.getcu(i2p, Unit.Type.INCHES)} 
-                    draw={this.rapidReact.bind(this)}
+                    draw={this.chargedUp.bind(this)}
                 ></Canvas>
             </div>
         )
@@ -1466,4 +2539,4 @@ const FieldTypes = {
     Timeline: Field.TimelineEvent
 }
 
-export { Field, FieldTypes }
+export { Field, FieldTypes, chargedUp, rapidReact }
