@@ -24,7 +24,7 @@ class IOPowerDistribution extends React.Component {
             pdhImage: null,
             pdpImageSizingMultiplier: 0.6,
             pdhImageSizingMultiplier: 0.6,
-            currentlyDrawing: IOPowerDistribution.Type.PDP,
+            currentlyDrawing: IOPowerDistribution.Type.PDH,
             loadedPDP: false,
             loadedPDH: false,
 
@@ -117,9 +117,15 @@ class IOPowerDistribution extends React.Component {
                 ctx.lineTo(positions[i].x - 30, positions[i].y);
                 ctx.stroke();
 
-                ctx.fillText(`${i < this.state.channels ? this.state.ioCurrents[i] : 0}A`, positions[i].x - 40 - (6 * `${this.state.ioCurrents[i]}A`.length), positions[i].y + 5);
+                ctx.fillText(`${i < this.state.channels ? this.state.ioCurrents[i] : 0}A`, positions[i].x - (6 * `${this.state.ioCurrents[i]}A`.length), positions[i].y + 5);
             }
         }
+
+        ctx.fillStyle = "black";
+        ctx.fillText(`Type: ${this.state.currentlyDrawing}`, 10, 20);
+        ctx.fillText(`Temperature: ${Math.floor(this.state.temperature * 100) / 100}C`, 10, 35);
+        ctx.fillText(`Voltage: ${Math.round(this.state.voltage * 100) / 100}V`, 10, 50);
+        ctx.fillText(`Number of Channels: ${this.state.channels}`, 10, 65);
 
         // ctx.font = "20px Arial";
         // ctx.fillText(`${mouse.x} ${mouse.y}`, 10, 20);

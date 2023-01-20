@@ -2264,8 +2264,6 @@ class Field extends React.Component {
                                 ctx.stroke();
                             })
                         }
-                        
-                        
 
                         ctx.lineWidth = 1;
                         ctx.strokeStyle = "black";
@@ -2524,7 +2522,7 @@ class Field extends React.Component {
                 <Canvas id="field" 
                     width={game.field.width.fullMeasure.getcu(i2p, Unit.Type.INCHES)} 
                     height={game.field.height.fullMeasure.getcu(i2p, Unit.Type.INCHES)} 
-                    draw={this.chargedUp.bind(this)}
+                    draw={this[this.state.game].bind(this)}
                 ></Canvas>
             </div>
         )

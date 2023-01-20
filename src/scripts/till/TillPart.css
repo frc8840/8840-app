@@ -1,0 +1,31 @@
+
+.till-part {
+    position: absolute;
+    display: flex;
+    cursor: pointer;
+    user-select: none;
+}
+
+.till-part-block {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid #000;
+    border-radius: 5px;
+    box-shadow: 0 0 5px #000;
+}
+
+.till-part-input {
+    position: absolute;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    background-color: #fff;
+    border: 1px solid #000;
+    border-radius: 5px;
+    box-shadow: 0 0 5px #000;
+}

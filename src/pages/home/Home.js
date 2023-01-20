@@ -13,6 +13,9 @@ import Till from "../till/Till";
 import PathSelector from "../../scripts/field/pathplanner/selector/PathSelector";
 import SimControls from "../../scripts/controls/SimControls";
 import IOPowerDistribution from "../../scripts/io/pd/IOPowerDistribution";
+import BlockPage from "../blocks/BlockPage";
+import IOCanCoder from "../../scripts/io/cancoder/IOCanCoder";
+import IOSwerveModule from "../../scripts/io/swerve/IOSwerve";
 
 function Home() {
     const [params, setSearchParams] = useSearchParams();
@@ -68,6 +71,10 @@ function Home() {
     } else if (params.get("tab") === "till") {
         tab = (<Till></Till>);
         useHosting = false;
+    } else if (params.get("tab") === "blocks") {
+        tab = (<BlockPage></BlockPage>)
+        useHosting = false;
+        return (tab);
     } else if (params.get("tab") === "controls") {
         tab = (
             <div>
@@ -83,6 +90,8 @@ function Home() {
         tab = (
             <div>
                 <IOPowerDistribution></IOPowerDistribution>
+                <IOCanCoder></IOCanCoder>
+                <IOSwerveModule></IOSwerveModule>
             </div>
         )
     }
