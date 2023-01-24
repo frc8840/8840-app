@@ -1,0 +1,19 @@
+
+#field-3d-parent {
+    position: absolute;
+    top: 300px;
+    left: 50px;
+    padding: 10px;
+    background-color: #404040;
+    border: 1px solid #000000;
+    /* slight drop shadow */
+    -webkit-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+    box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+    color: white;
+    font-size: 10px;
+}
+
+#field-3d-parent > div > canvas {
+    margin-top: 10px;
+}

@@ -94,5 +94,7 @@ export {
     float2,
     float3,
     translate,
-    rotate
+    rotate,
+    Float2,
+    Float3
 }

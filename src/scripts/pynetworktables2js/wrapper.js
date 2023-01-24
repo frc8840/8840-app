@@ -29,7 +29,7 @@ function init(host="localhost:8888") {
         const key = key_.replace(_start, "");
 
         for (let tab of Object.keys(global.nt_listeners)) {
-            if (key.startsWith(tab + tabKeySeperator)) {
+            if (key.startsWith(tab + tabKeySeperator) || tab == "all") {
                 const callback = global.nt_listeners[tab];
                 if (typeof callback === "function") {
                     callback(key.replace(tab + tabKeySeperator, ""), value, isNew);

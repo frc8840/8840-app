@@ -16,13 +16,15 @@ import IOPowerDistribution from "../../scripts/io/pd/IOPowerDistribution";
 import BlockPage from "../blocks/BlockPage";
 import IOCanCoder from "../../scripts/io/cancoder/IOCanCoder";
 import IOSwerveModule from "../../scripts/io/swerve/IOSwerve";
+import PigeonVisualized from "../../scripts/pigeon/PigeonVisualized";
+import Field3D from "../../scripts/field/3D/3DField";
 
 function Home() {
     const [params, setSearchParams] = useSearchParams();
 
     let tab = (
         <div>
-            <Field></Field>
+            <Field game={"chargedUp"}></Field>
             <SpeedCC></SpeedCC>
             <SwerveInfo></SwerveInfo>
             <PathSelector></PathSelector>
@@ -64,7 +66,7 @@ function Home() {
     } else if (params.get("tab") == "path_planner") {
         tab = (
             <div>
-                <Field inchToPixel={1.5} simtype={Field.SimulType.Planning}></Field>
+                <Field inchToPixel={1.5} simtype={Field.SimulType.Planning} game={"chargedUp"}></Field>
                 <PathSelector></PathSelector>
             </div>
         )
@@ -82,6 +84,8 @@ function Home() {
                 <SimControls type={SimControls.Type.Rotation}></SimControls>
                 <SimControls type={SimControls.Type.Button}></SimControls>
                 <SimControls type={SimControls.Type.FOV}></SimControls>
+                <IOSwerveModule></IOSwerveModule>
+                <PigeonVisualized></PigeonVisualized>
                 <PathSelector></PathSelector>
                 <SwerveInfo></SwerveInfo>
             </div>
@@ -89,9 +93,16 @@ function Home() {
     } else if (params.get("tab") === "io") {
         tab = (
             <div>
+                <PigeonVisualized></PigeonVisualized>
                 <IOPowerDistribution></IOPowerDistribution>
                 <IOCanCoder></IOCanCoder>
                 <IOSwerveModule></IOSwerveModule>
+            </div>
+        )
+    } else if (params.get("tab") == "3d") {
+        tab = (
+            <div>
+                <Field3D></Field3D>
             </div>
         )
     }

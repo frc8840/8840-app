@@ -76,7 +76,7 @@ class PID {
             console.log(lastPos, goal, position, derivative, intergral)
         }
 
-        const movement = (this.p * error) + (this.i * intergral) + (this.d * derivative);
+        const movement = (this.p * error) + (this.i * intergral) - (this.d * derivative);
 
         this.lastPos = {
             x: position,
@@ -124,8 +124,8 @@ class PID {
         }
 
         const movement = {
-            x: (this.p * error.x) + (this.i * intergral.x) + (this.d * derivative.x),
-            y: (this.p * error.y) + (this.i * intergral.y) + (this.d * derivative.y)
+            x: (this.p * error.x) + (this.i * intergral.x) - (this.d * derivative.x),
+            y: (this.p * error.y) + (this.i * intergral.y) - (this.d * derivative.y)
         }
 
         this.lastPos = {

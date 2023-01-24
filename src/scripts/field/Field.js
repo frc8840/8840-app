@@ -17,6 +17,7 @@ import PlayerStartManager from "./interact/PlayerStart";
 import { load, save } from "../save/SaveManager";
 import RapidReactPlayer from "./interact/Player";
 import probability, { random } from "../misc/probability";
+import { float2 } from "../raycasting/float";
 
 const degreeDifference = 15;
 
@@ -28,6 +29,11 @@ const positionEventEditDistance = 10;
 
 const maxAmountOfPlayers = 6;
 
+const emojis = {
+    X: "❌",
+    CHECK: "✅",
+    CIRCLE_OUTLINE: "⭕",
+}
 
 const defaultAprilTagSize = new Unit(8, Unit.Type.INCHES);
 
@@ -916,7 +922,7 @@ class Field extends React.Component {
         //Create scoring system (charged up specific)
         let chargedUpScoring = {};
 
-        if ((Object.keys(this.props || {}).includes("game") ? this.props.game : "rapidReact") == "rapidReact") {
+        if ((Object.keys(props || {}).includes("game") ? this.props.game : "") == "rapidReact") {
             const ballRadius = rapidReact.balls.radiusFromCenter.getcu(i2p, Unit.Type.INCHES);
 
             let i = 0;
@@ -988,7 +994,7 @@ class Field extends React.Component {
                 w: 100,
                 h: rapidReact.field.height.fullMeasure.getcu(i2p, Unit.Type.INCHES)
             }, new Angle(0, Angle.Radians)));
-        } else if (this.props.game == "chargedUp") {
+        } else if ((Object.keys(props || {}).includes("game") ? props.game : "") == "chargedUp") {
             chargedUpScoring = {
                 blue: {
                     /** 
@@ -1197,6 +1203,8 @@ class Field extends React.Component {
                             y,
                             type: Field.PointType.Hard
                         });
+
+                        this.adjustPathInfoToNonGenerated.bind(this)();
                     },
                     renderCondition: () => {
                         if (this.state.transformMenuToPositionEventEditor) return false;
@@ -1211,6 +1219,8 @@ class Field extends React.Component {
                             y,
                             type: Field.PointType.Soft
                         });
+
+                        this.adjustPathInfoToNonGenerated.bind(this)();
                     },
                     renderCondition: () => {
                         if (this.state.transformMenuToPositionEventEditor) return false;
@@ -1400,9 +1410,9 @@ class Field extends React.Component {
 
         if (simulationType == Field.SimulType.Planning) { 
             //TODO: Add this in when releasing
-            // window.onbeforeunload = () => {
-            //     return this.state.positions.length > 0;
-            // };
+            window.onbeforeunload = () => {
+                return this.state.positions.length > 0;
+            };
 
             this.state.keyListeners.push(this.state.timeline);
 
@@ -2033,6 +2043,8 @@ class Field extends React.Component {
                         distBetweenPoints: baseDistanceBetweenPoints
                     });
 
+                    this.adjustPathInfoToNonGenerated.bind(this)();
+
                     //TODO: Same w/ this, need to fix it in the future but it still works fine
                     //I can still adjust points and stuff, but it may cause some issues.
                     // if (!deletedPoint) {
@@ -2255,13 +2267,15 @@ class Field extends React.Component {
 
                         if (!noDisplayTag) {
                             this.state.aprilTags.tags.forEach(tag => {
-                                ctx.beginPath();
                                 const tagX = typeof tag.x == "object" ? tag.x.getcu(i2p, Unit.Type.INCHES) : tag.x;
                                 const tagY = typeof tag.y == "object" ? tag.y.getcu(i2p, Unit.Type.INCHES) : tag.y;
-    
-                                ctx.moveTo(tagX, tagY)
-                                ctx.lineTo(currentPos.x, currentPos.y)
-                                ctx.stroke();
+
+                                if (AprilTagManager.roughAbleToSeeTag(float2(tagX, tagY), tag.rotation, float2(currentPos.x, currentPos.y), new Angle(angle, Angle.Radians))) {
+                                    ctx.beginPath();
+                                    ctx.moveTo(tagX, tagY)
+                                    ctx.lineTo(currentPos.x, currentPos.y)
+                                    ctx.stroke();
+                                }                                
                             })
                         }
 
@@ -2438,21 +2452,43 @@ class Field extends React.Component {
         } else if (lk == "i" && !this.state.keysDown[lk]) {
             this.state.show.pathAsPoints = !this.state.show.pathAsPoints;
         } else if (lk == "t" && !this.state.keysDown[lk]) {
-            this.state.show.timeline = !this.state.show.timeline;
+            this.doToggleTimeline.bind(this)();
         } else if (lk == "g" && !this.state.keysDown[lk]) {
             this.state.planner.generatePath(this.state.planner.getPositions()[0], -1, false);
         } else if (lk == "h" && !this.state.keysDown[lk]) {
-            this.state.planner.updatePositionEvents(this.state.positionEvents)
-            const newTimeline = this.state.planner.generateTimeline([], 0);
-            this.state.timeline.generated = newTimeline;
+            this.doPathPIDGeneration.bind(this)();
         } else if (lk == "p" && !this.state.keysDown[lk]) {
-            alert("Sending once this message is closed.")
-            console.log("Sending path to robot...")
-            this.state.planner.sendPathToRobot();
+            this.doSendPath.bind(this)();
         }
 
         sk();
     }
+
+    doPathPIDGeneration() {
+        this.state.planner.updatePositionEvents(this.state.positionEvents)
+        const newTimeline = this.state.planner.generateTimeline([], 0);
+        this.state.timeline.generated = newTimeline;
+
+        document.getElementById("generated-path-info").innerHTML = `${emojis.CHECK}`;
+    }
+
+    doSendPath() {
+        alert("Sending once this message is closed.")
+        console.log("Sending path to robot...")
+        this.state.planner.sendPathToRobot();
+    }
+
+    doToggleTimeline() {
+        this.state.show.timeline = !this.state.show.timeline;
+        document.getElementById("toggle-timeline-button").innerHTML = this.state.show.timeline ? "Hide Timeline" : "Show Timeline";
+    }
+
+    adjustPathInfoToNonGenerated() {
+        if (document.getElementById("generated-path-info").innerHTML != emojis.X) {
+            document.getElementById("generated-path-info").innerHTML = `${emojis.CIRCLE_OUTLINE}`;
+        }
+    }
+
     keyUp(e) {
         const lk = e.key.toLowerCase();
         if (Object.keys(this.state.keysDown).includes(lk)) {
@@ -2504,7 +2540,7 @@ class Field extends React.Component {
         let game = chargedUp;
 
         if (Object.keys(this.props || {}).includes("game")) {
-            switch (this.params.game) {
+            switch (this.props.game) {
                 case "rapidReact":
                     game = rapidReact;
                     break;
@@ -2524,8 +2560,19 @@ class Field extends React.Component {
                     height={game.field.height.fullMeasure.getcu(i2p, Unit.Type.INCHES)} 
                     draw={this[this.state.game].bind(this)}
                 ></Canvas>
+                <div>{this.state.simulationType == Field.SimulType.Planning ? (
+                    <>
+                        <br/>
+                        <button onClick={this.doToggleTimeline.bind(this)} id="toggle-timeline-button">Open Timeline</button>
+
+                        <button onClick={this.doPathPIDGeneration.bind(this)}>Generate Path</button>
+                        <span className="field-info-span">Path Generated? <span id="generated-path-info">{emojis.X}</span></span>
+
+                        <button onClick={this.doSendPath.bind(this)}>Send Path To Robot</button>
+                    </>
+                ) : <></>}</div>
             </div>
-        )
+        );
     }
 }
 

@@ -23,7 +23,10 @@ class IOSwerveModule extends React.Component {
             monitor: "-1",
             lastMouseState: false,
             loadRot: 0,
-            t: 0
+            t: 0,
+            velocityHistory: [],
+            isDoingPlot: true,
+            pausePlot: false,
         }
 
         addTabListener("IO", (key, value, isNew) => {
@@ -41,6 +44,13 @@ class IOSwerveModule extends React.Component {
                 if (ioValueKey == "DriveData") {
                     if (isValue) {
                         const data = this.parseDriveDataByteArray(value);
+
+                        if (index == this.state.monitor) {
+                            this.state.velocityHistory.push({
+                                t: Date.now(),
+                                v: data.rawDriveVelocity * data.driveVelocityConversionFactor,
+                            })
+                        }
 
                         this.state.info[index] = {
                             ...this.state.info[index],
@@ -134,19 +144,60 @@ class IOSwerveModule extends React.Component {
         ctx.fillStyle = "black";
         ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-        //Draw an arrow in the direction of angle with a length of velocity / 5 * 100
-        const arrowLength = velocity / 5 * 100;
+        if (!this.state.isDoingPlot) {
+            //Draw an arrow in the direction of angle with a length of velocity / 5 * 100
+            const arrowLength = velocity / 5 * 100;
 
-        ctx.strokeStyle = "white";
-        ctx.lineWidth = 10;
-        ctx.beginPath();
-        ctx.moveTo(canvas.width / 2, canvas.height / 2);
-        
-        const arrowX = canvas.width / 2 + arrowLength * Math.cos(angle);
-        const arrowY = canvas.height / 2 + arrowLength * Math.sin(angle);
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 10;
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, canvas.height / 2);
+            
+            const arrowX = canvas.width / 2 + arrowLength * Math.cos(Angle.toRadians(angle));
+            const arrowY = canvas.height / 2 + arrowLength * Math.sin(Angle.toRadians(angle));
 
-        ctx.lineTo(arrowX, arrowY);
-        ctx.stroke();
+            ctx.lineTo(arrowX, arrowY);
+            ctx.stroke();
+        } else if (this.state.velocityHistory.length > 0) {
+            const middle = (ctx.canvas.height - 30) / 2;
+            const perPoint01 = middle / 12;
+
+            const range = this.state.velocityHistory[this.state.velocityHistory.length - 1].t - this.state.velocityHistory[0].t;
+
+            const maxHeight = 100;
+
+            ctx.strokeStyle = "gray";
+            ctx.lineWidth = 1;
+            ctx.moveTo(0, middle);
+            ctx.lineTo(ctx.canvas.width, middle);
+            ctx.stroke();
+
+            ctx.strokeStyle = "white";
+            ctx.lineWidth = 1;
+
+            const adjustedList = this.state.velocityHistory.map(e => {
+                return {
+                    t: e.t - this.state.velocityHistory[0].t,
+                    v: e.v,
+                }
+            });
+
+            const milliPerPoint = ctx.canvas.width / range;
+
+            ctx.beginPath();
+            ctx.moveTo(0, middle - (adjustedList[0].v * perPoint01 * 10));
+            for (let i = 1; i < adjustedList.length; i++) {
+                const point = adjustedList[i];
+                ctx.lineTo(point.t * milliPerPoint, middle - (point.v * perPoint01 * 10));
+            }
+            ctx.stroke();
+
+            if (!this.state.pausePlot) {
+                this.state.velocityHistory = this.state.velocityHistory.filter((e) => {
+                    return this.state.velocityHistory[this.state.velocityHistory.length - 1].t - e.t < 5000;
+                })
+            }
+        }
 
 
         document.getElementById("mod_raw_drive_pos").innerHTML = info.rawDrivePosition;

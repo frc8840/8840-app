@@ -5,6 +5,7 @@ import dist from "../../misc/dist";
 import { save, load } from "../../save/SaveManager";
 
 import { chargedUp } from "../Field";
+import { Float2, float2 } from "../../raycasting/float";
 
 const defaultSize = new Unit(8, Unit.Type.INCHES);
 
@@ -88,6 +89,28 @@ class AprilTag {
 }
 
 class AprilTagManager {
+    static roughAbleToSeeTag(tagPos=float2(0,0), tagRot=new Angle(0,Angle.Degrees), point_=float2(0,0), pointAngle=new Angle(0,Angle.Degrees)) {
+        const fovAngle = new Angle(60, Angle.Degrees);
+        const maxDistance = new Unit(10, Unit.Type.FEET);
+
+        let point = point_;
+
+        if (!(point instanceof Float2)) {
+            point = float2(point.x, point.y);
+        }
+
+        const tagPoint = tagPos;
+        const distance = dist(point, tagPoint);
+        
+        if (distance > maxDistance.get(Unit.Type.INCHES)) return false;
+
+        const angle = pointAngle.get(Angle.Radians) - tagRot.get(Angle.Radians);
+        const angleToTag = Math.atan2(tagPoint.y - point.y, tagPoint.x - point.x);
+
+        const angleDiff = Math.abs(angle - angleToTag);
+
+        return angleDiff < fovAngle.get(Angle.Radians);
+    }
     constructor(i2p, tags=[], tagsAreLocked=false) {
         this.i2p = i2p;
 
