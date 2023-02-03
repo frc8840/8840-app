@@ -31,15 +31,22 @@ class IOSwerveModule extends React.Component {
 
         addTabListener("IO", (key, value, isNew) => {
             if (key.startsWith(keyStart)) {
-                //EX: [keyStart]/absolute position/0/value = value
+                //EX: [keyStart]/0/absolute position/value = value
 
-                const ioValueKey = key.split("/")[1];
+                //EX: [keyState]/0/.info/real = true or false
+
+                const splitKey = key.split("/");
+                const gsk = (i) => {
+                    if (splitKey.length <= i) return "";
+                    return splitKey[i];
+                }
+
                 const index = parseInt(key.split("/")[0].replace(keyStart + " ", ""));
-                const isValue = key.split("/")[3] == "value";
-                const isRealInfo = key.split("/")[3] == "real";
-                const isPermissions = key.split("/")[3] == "p";
+                const ioValueKey = gsk(2);
+                const isValue = gsk(3) == "v";
+                const isRealInfo = gsk(2) == ".info" && gsk(3) == "real";
 
-                if (!isValue && !isRealInfo && !isPermissions) return;
+                if (!isValue && !isRealInfo) return;
 
                 if (ioValueKey == "DriveData") {
                     if (isValue) {
@@ -60,15 +67,6 @@ class IOSwerveModule extends React.Component {
                         this.state.info[index] = {
                             ...this.state.info[index],
                             isReal: (value == "true" || value == true),
-                        }
-                    } else if (isPermissions) {
-                        let perms = [];
-                        if (value.includes("r")) perms.push("READ");
-                        if (value.includes("w")) perms.push("WRITE");
-                        
-                        this.state.info[index] = {
-                            ...this.state.info[index],
-                            permissions: perms,
                         }
                     }
                 }

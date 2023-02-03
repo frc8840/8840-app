@@ -7,7 +7,7 @@ import Home from './pages/home/Home';
 import init from './scripts/pynetworktables2js/wrapper'
 
 //Init pynetworktables2js and extra wrapper for some extra functionality for 8840-lib
-init("192.168.5.143:8888");
+init("192.168.5.143", 8888);
 
 function App() {
     return (

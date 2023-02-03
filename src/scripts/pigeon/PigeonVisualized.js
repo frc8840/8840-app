@@ -29,11 +29,15 @@ class PigeonVisualized extends React.Component {
         addTabListener("IO", (key, value, isNew) => {
             if (key.startsWith("Pigeon Gyroscope")) {
                 const split = key.split("/");
+                const gsk = (i) => {
+                    if (split.length <= i) return "";
+                    return split[i];
+                }
 
-                //ex: Pigeon Gyroscope/yaw pitch roll/0/value
+                //ex: Pigeon Gyroscope/0/yaw pitch roll/value
 
-                const isYawPitchRoll = split[1] == "yaw pitch roll";
-                const isValue = split[split.length - 1] == "value";
+                const isYawPitchRoll = gsk(2) == "yaw pitch roll";
+                const isValue = gsk(3) == "value";
                 
                 if (isValue && isYawPitchRoll) {
                     this.state.info = {

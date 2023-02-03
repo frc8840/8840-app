@@ -3,7 +3,25 @@ import initialize from "./networktables.js";
 const tabKeySeperator = "/";
 const _start = "/8840-lib/";
 
-function init(host="localhost:8888") {
+window.ntmetrics = {
+    totalIncoming: 0,
+    totalOutgoing: 0,
+    totalIncomingSize: 0,
+    totalOutgoingSize: 0,
+    lastSecondIncoming: 0,
+    lastSecondOutgoing: 0,
+    start: 0,
+}
+
+function init(ip="localhost", port=8888) {
+    const host = ip + ":" + port;
+
+    //save to localstorage
+    window.localStorage.setItem("pyntsaved", JSON.stringify({
+        ip,
+        port,
+    }));
+
     global.pynttbl2js = {
         host,
     }
@@ -11,7 +29,9 @@ function init(host="localhost:8888") {
     // Initialize pynetworktables2js
     initialize();
 
-    global.nt_listeners = {};
+    global.nt_listeners = [];
+
+    window.ntmetrics.start = Date.now();
 
     //Add listener for when robot is connected to networktables
     global.NetworkTables.addRobotConnectionListener((connected) => {
@@ -28,19 +48,30 @@ function init(host="localhost:8888") {
     global.NetworkTables.addGlobalListener((key_, value, isNew) => {
         const key = key_.replace(_start, "");
 
-        for (let tab of Object.keys(global.nt_listeners)) {
+        addIncoming(key + String(value));
+
+        for (let ntlistener of global.nt_listeners) {
+            const tab = ntlistener.tab;
             if (key.startsWith(tab + tabKeySeperator) || tab == "all") {
-                const callback = global.nt_listeners[tab];
+                const callback = ntlistener.callback;
                 if (typeof callback === "function") {
                     callback(key.replace(tab + tabKeySeperator, ""), value, isNew);
                 }
             }
         }
     }, true);
+
+    setInterval(() => {
+        window.ntmetrics.lastSecondIncoming = 0;
+        window.ntmetrics.lastSecondOutgoing = 0;
+    }, 1000)
 }
 
 function addTabListener(tab, callback=(key, value, isNew) => {}) {
-    global.nt_listeners[tab] = callback;
+    global.nt_listeners.push({
+        tab,
+        callback
+    });
     console.log("[NTWrapper] Added tab listener for tab " + tab);
 }
 
@@ -58,9 +89,21 @@ function getTabs() {
 
 function putValue(tab, path, value) {
     let success = global.NetworkTables.putValue(`${_start}${tab}/${path}`, value);
+    addOutgoing(`${_start}${tab}/${path}${String(value)}`, success)
     return success;
 }
 
+function addIncoming(dataAsString) {
+    window.ntmetrics.totalIncoming++;
+    window.ntmetrics.lastSecondIncoming++;
+    window.ntmetrics.totalIncomingSize += new Blob([dataAsString]).size;
+}
+
+function addOutgoing(dataAsString) {
+    window.ntmetrics.totalOutgoing++;
+    window.ntmetrics.lastSecondOutgoing++;
+    window.ntmetrics.totalOutgoingSize += new Blob([dataAsString]).size;
+}
 
 export default init;
 

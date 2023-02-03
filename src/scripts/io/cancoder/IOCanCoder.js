@@ -26,13 +26,23 @@ class IOCanCoder extends React.Component {
 
         addTabListener("IO", (key, value, isNew) => {
             if (key.startsWith(keyStart)) {
-                //EX: [keyStart]/absolute position/0/value = value
+                //EX: [keyStart]/0/absolute_position/value = value
 
-                const ioValueKey = key.split("/")[1];
-                const index = parseInt(key.split("/")[2]);
-                const isValue = key.split("/")[3] == "value";
-                const isRealInfo = key.split("/")[3] == "real";
-                const isPermissions = key.split("/")[3] == "p";
+                //EX: [keyStart]/0/.info/real = true or false
+                //EX: [keyStart]/.info/p = true or false
+
+                const splitKey = key.split("/");
+                const gsk = (i) => {
+                    if (splitKey.length <= i) return "";
+                    return splitKey[i];
+                } 
+
+                const index = parseInt(gsk(1));
+                const ioValueKey = gsk(2);
+                const isValue = gsk(3) == "v";
+
+                const isRealInfo = gsk(2) == ".info" && gsk(3) == "real";
+                const isPermissions = gsk(2) == "p";
 
                 if (!isValue && !isRealInfo && !isPermissions) return;
 

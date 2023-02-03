@@ -18,24 +18,28 @@ import IOCanCoder from "../../scripts/io/cancoder/IOCanCoder";
 import IOSwerveModule from "../../scripts/io/swerve/IOSwerve";
 import PigeonVisualized from "../../scripts/pigeon/PigeonVisualized";
 import Field3D from "../../scripts/field/3D/3DField";
+import Dashboard from "../dashboard/Dashboard";
+import IOEditor from "../../scripts/io/editor/IOEditor";
 
 function Home() {
     const [params, setSearchParams] = useSearchParams();
 
-    let tab = (
-        <div>
-            <Field game={"chargedUp"}></Field>
-            <SpeedCC></SpeedCC>
-            <SwerveInfo></SwerveInfo>
-            <PathSelector></PathSelector>
-        </div>
-    );
+    let tab = (<Dashboard></Dashboard>)
 
     let useHosting = true;
 
     console.log("Loading tab: " + params.has("tab") ? params.get("tab") : "No tab specified.")
 
-    if (params.get("tab") === "nn") {
+    if (params.get("tab") == "home") {
+        tab = (
+            <div>
+                <Field game={"chargedUp"}></Field>
+                <SpeedCC></SpeedCC>
+                <SwerveInfo></SwerveInfo>
+                <PathSelector></PathSelector>
+            </div>
+        );
+    } else if (params.get("tab") === "nn") {
         tab = (
             <div className="neural-parent">
                 <nn.ReactNN 
@@ -97,6 +101,7 @@ function Home() {
                 <IOPowerDistribution></IOPowerDistribution>
                 <IOCanCoder></IOCanCoder>
                 <IOSwerveModule></IOSwerveModule>
+                <IOEditor></IOEditor>
             </div>
         )
     } else if (params.get("tab") == "3d") {
@@ -105,6 +110,8 @@ function Home() {
                 <Field3D></Field3D>
             </div>
         )
+    } else {
+        useHosting = false;
     }
 
     return (

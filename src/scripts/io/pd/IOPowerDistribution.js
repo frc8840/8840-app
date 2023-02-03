@@ -40,8 +40,14 @@ class IOPowerDistribution extends React.Component {
             if (key.startsWith(keyStart)) {
                 //EX: keyStart/name/0/xyz = value
 
-                const relKey = key.split("/")[1];
-                const isValue = key.split("/")[3] == "value";
+                const splitKey = key.split("/");
+                const gsk = (i) => {
+                    if (splitKey.length <= i) return "";
+                    return splitKey[i];
+                }
+
+                const relKey = gsk(1);
+                const isValue = gsk(3) == "v";
 
                 if (!isValue) return;
 
