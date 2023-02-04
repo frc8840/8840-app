@@ -96,17 +96,17 @@ class IOCanCoder extends React.Component {
 
         ctx.fillStyle = "black";
         ctx.font = "18px Arial";
-        ctx.fillText("90°", 262, 155);
+        ctx.fillText("270°", 262, 155);
 
         ctx.fillStyle = "black";
         ctx.font = "18px Arial";
-        ctx.fillText("270°", 5, 155);
+        ctx.fillText("90°", 5, 155);
 
         ctx.strokeStyle = "black";
         ctx.lineWidth = 2;
         ctx.beginPath();
         ctx.moveTo(150, 150);
-        const deg = Angle.toRadians(this.state.info[this.state.monitor].absolutePosition) - Math.PI / 2;
+        const deg = (2 * Math.PI) - (Angle.toRadians(this.state.info[this.state.monitor].absolutePosition) - Math.PI / 2);
         ctx.lineTo(Math.cos(deg) * r + 150, Math.sin(deg) * r + 150);
         ctx.stroke();
 

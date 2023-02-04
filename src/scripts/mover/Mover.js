@@ -6,6 +6,10 @@ if (!Object.keys(global).includes("mover_ids")) {
     global.mover_ids = [];
 }
 
+if (!Object.keys(window).includes("mover_hierarchy")) {
+    window.hierachy = {};
+}
+
 const chars = "qwertyuiopasdfghjklzxcvbnm1234567890".split("");
 function createMoverID(target) {
     if (global.mover_ids_pstr) {
@@ -44,6 +48,15 @@ class Mover extends React.Component {
             mouseOver: false,
             lastPos,
         }
+
+        const sortedHierarchy = Object.keys(window.hierachy).sort((a, b) => {
+            return window.hierachy[b].index - window.hierachy[a].index;
+        });
+
+        window.hierachy[this.props.target] = {
+            index: sortedHierarchy[0] + 1,
+            refer: this.state.id
+        }
     }
     savePosition() {
         const target = document.getElementById(this.props.target);
@@ -80,6 +93,8 @@ class Mover extends React.Component {
             mouseDown: false
         })
         this.state.mouseDown = false;
+
+        //console.log('OAIDSNGKJASDNG')
 
         this.savePosition();
     }
