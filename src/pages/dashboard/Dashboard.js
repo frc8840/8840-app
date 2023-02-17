@@ -192,6 +192,24 @@ class Dashboard extends React.Component {
             }
         }
 
+        let robotWidth = 25;
+        let robotLength = 25;
+
+        if (window.localStorage.getItem("robot-size") != null) {
+            const savedSize = JSON.parse(window.localStorage.getItem("robot-size"));
+
+            robotWidth = savedSize.width;
+            robotLength = savedSize.length;
+        }
+
+        let maxVelocity = 3;
+
+        if (window.localStorage.getItem("swerve-settings") != null) {
+            const savedSettings = JSON.parse(window.localStorage.getItem("swerve-settings"));
+
+            maxVelocity = savedSettings.maxVelocity;
+        }
+
         let logWriterName = "EmptyLogWriter";
         let eventListenerName = "EmptyEventListener";
         let lockLogWriter = false;
@@ -208,10 +226,14 @@ class Dashboard extends React.Component {
             logWriterName,
             lockLogWriter,
             lockEventListener,
+            robotWidth,
+            robotLength,
+            maxVelocity
         }
 
         this.toggleSidebarOpen = this.toggleSidebarOpen.bind(this);
         this.sendPreferences = this.sendPreferences.bind(this);
+        this.saveSwerveSettings = this.saveSwerveSettings.bind(this);
     }
 
     toggleSidebarOpen() {
@@ -328,6 +350,19 @@ class Dashboard extends React.Component {
         alert("Saved!")
     }
 
+    saveRobotDimensions() {
+        window.localStorage.setItem("robot-size", JSON.stringify({
+            width: document.getElementById("robot-width").value,
+            length: document.getElementById("robot-length").value
+        }))
+    }
+
+    saveSwerveSettings() {
+        window.localStorage.setItem("swerve-settings", JSON.stringify({
+            maxVelocity: document.getElementById("max-velocity").value,
+        }))
+    }
+
     redirect(path=null) {
         //if path is null, then the bind will pass the path
         window.location.href = typeof path == "object" ? String(this) : String(path);
@@ -382,6 +417,20 @@ class Dashboard extends React.Component {
                         <p>Teleoperated Timing (minutes:seconds)</p>
                         <input defaultValue={"2:15"} id="teleop-timing" name="teleop-timing" />
                         <DashboardLockInput target={"teleop-timing"} forceState={true} defaultValue={true} />
+                    </DashboardSidebarContent>
+                    <DashboardSidebarContent title="Robot Dimensions">
+                        <p>Width</p>
+                        <input defaultValue={this.state.robotWidth} min={0} id="robot-width" name="robot-width" type="number" /> 
+                        <DashboardLockInput target={"robot-width"} forceState={false} defaultValue={false}/>
+                        <p>Length</p>
+                        <input defaultValue={this.state.robotLength} min={0} id="robot-length" name="robot-length" /> 
+                        <DashboardLockInput target={"robot-length"} forceState={false} defaultValue={false}/>
+                        <button className="sidebar-button" onClick={this.saveRobotDimensions}>Save</button>
+                    </DashboardSidebarContent>
+                    <DashboardSidebarContent title="Swerve Settings">
+                        <p>Max Velocity</p>
+                        <input defaultValue={this.state.maxVelocity} min={0} id="max-velocity" name="max-velocity" type="number" />
+                        <button className="sidebar-button" onClick={this.saveSwerveSettings}>Save</button>
                     </DashboardSidebarContent>
                     <DashboardSidebarContent title="Credits">
                         <h3>Made By</h3>

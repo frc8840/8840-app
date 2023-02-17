@@ -20,6 +20,8 @@ import PigeonVisualized from "../../scripts/pigeon/PigeonVisualized";
 import Field3D from "../../scripts/field/3D/3DField";
 import Dashboard from "../dashboard/Dashboard";
 import IOEditor from "../../scripts/io/editor/IOEditor";
+import LoadLog from "../../scripts/logs/parser/LoadLog";
+import LogPlayback from "../../scripts/logs/playback/LogPlayback";
 
 function Home() {
     const [params, setSearchParams] = useSearchParams();
@@ -108,6 +110,14 @@ function Home() {
         tab = (
             <div>
                 <Field3D></Field3D>
+            </div>
+        )
+    } else if (params.get("tab") == "log") {
+        tab = (
+            <div>
+                <LoadLog></LoadLog>
+                <LogPlayback></LogPlayback>
+                <SwerveInfo log={true}></SwerveInfo>
             </div>
         )
     } else {
