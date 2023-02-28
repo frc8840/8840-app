@@ -1,0 +1,22 @@
+
+.custom-built-module {
+    position: absolute;
+    top: 300px;
+    left: 50px;
+    padding: 10px;
+    background-color: #404040;
+    border: 1px solid black;
+    border: 1px solid #000000;
+    /* slight drop shadow */
+    -webkit-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+    box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+}
+
+.custom-built-module > canvas, #log-playback-parent > div {
+    margin-top: 10px;
+}
+
+.custom-built-module > div:nth-child(2) {
+    margin-top: 10px;
+}

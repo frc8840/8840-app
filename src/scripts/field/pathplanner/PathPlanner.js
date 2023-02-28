@@ -11,6 +11,8 @@ import PID from "../../pid/PID";
 import { Unit, Angle } from "../../misc/unit";
 import PositionEvent from "./PositionEvent";
 
+import PathFileLoader from "./files/PathFileLoader";
+
 //Constants
 const pathDeltaTime = 0.03125;
 
@@ -83,9 +85,7 @@ class PathPlanner {
         this.state.timeline.events.push(event);
     }
 
-    sendPathToRobot() {
-        const url = window.getRobotServerURL() + "/auto_path";
-
+    generatePathData() {
         const translatedGeneratedTime = this.state.timeline.generated.map((timepoint) => {
             const newTimepoint = timepoint.map(event => {
                 const copy = Object.assign({}, event);
@@ -127,6 +127,14 @@ class PathPlanner {
             name: Object.keys(window).includes("lastLoadedFile") ? window.lastLoadedFile + "-" + Date.now() : "unnamed-" + Date.now(),
         };
 
+        return data;
+    }
+
+    sendPathToRobot() {
+        const url = window.getRobotServerURL() + "/auto/path";
+
+        const data = this.generatePathData();
+
         fetch(url, {
             method: "POST",
             headers: {
@@ -135,7 +143,9 @@ class PathPlanner {
             body: JSON.stringify(data),
         }).then((res) => res.json()).then(data => {
             console.log(data);
-        })
+            
+            alert("Sent path to robot with name: " + data.name);
+        });
     }
 
     generateBezierCurve(options={
@@ -965,6 +975,22 @@ class PathPlanner {
         console.log("finished generating timeline")
 
         return timeline;
+    }
+
+    loadFileAndCreateLastHardPoint() {
+        if (!(!!window.PathFileLoader)) return;
+
+        window.PathFileLoader.loadFile((PFL) => {
+            const positions = PFL.positions;
+
+            const lastPoint = positions[positions.length - 1];
+
+            this.addPosition({
+                x: lastPoint.x,
+                y: lastPoint.y,
+                type: FieldTypes.Points.Hard
+            })
+        });
     }
 }
 

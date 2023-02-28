@@ -2477,6 +2477,14 @@ class Field extends React.Component {
         console.log("Sending path to robot...")
         this.state.planner.sendPathToRobot();
     }
+    saveGeneratedPath() {
+        const data = this.state.planner.generatePathData();
+
+        const savePrompt = prompt("Save as: ");
+        if (savePrompt != null) {
+            save("gen_path/" + savePrompt + ".json", data);
+        }
+    }
 
     doToggleTimeline() {
         this.state.show.timeline = !this.state.show.timeline;
@@ -2569,6 +2577,9 @@ class Field extends React.Component {
                         <span className="field-info-span">Path Generated? <span id="generated-path-info">{emojis.X}</span></span>
 
                         <button onClick={this.doSendPath.bind(this)}>Send Path To Robot</button>
+                        <button onClick={this.saveGeneratedPath.bind(this)}>Save Generated Path (for 3D Field)</button>
+                        <br/>
+                        <button onClick={this.state.planner.loadFileAndCreateLastHardPoint}>Load last point from file</button>
                     </>
                 ) : <></>}</div>
             </div>

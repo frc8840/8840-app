@@ -26,7 +26,7 @@ class Hosting extends React.Component {
 
         let defaultSettings = {
             host: "localhost",
-            port: 8080,
+            port: 5805,
             timeoutPeriod: 10000,
         };
 

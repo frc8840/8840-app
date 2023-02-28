@@ -94,6 +94,9 @@ class Unit {
         this.centimeterConversion = Unit.Conversions[this.unit];
         this.inCentimeters = this.rawValue / this.centimeterConversion;
     }
+    to(unit=this.unit) {
+        return this.get(unit);
+    }
     get(unit=this.unit) {
         return this.inCentimeters * Unit.Conversions[unit];
     }

@@ -13,6 +13,8 @@ window.ntmetrics = {
     start: 0,
 }
 
+window.nt_cache = {};
+
 function init(ip="localhost", port=8888) {
     const host = ip + ":" + port;
 
@@ -46,6 +48,8 @@ function init(ip="localhost", port=8888) {
     }, true);
 
     global.NetworkTables.addGlobalListener((key_, value, isNew) => {
+        window.nt_cache[key_] = value;
+
         const key = key_.replace(_start, "");
 
         addIncoming(key + String(value));
@@ -56,6 +60,11 @@ function init(ip="localhost", port=8888) {
                 const callback = ntlistener.callback;
                 if (typeof callback === "function") {
                     callback(key.replace(tab + tabKeySeperator, ""), value, isNew);
+                }
+            } else if (tab == "all_ignore_prefix") {
+                const callback = ntlistener.callback;
+                if (typeof callback === "function") {
+                    return callback(key_.startsWith("/") ? key_.substring(1) : key_, value, isNew);
                 }
             }
         }

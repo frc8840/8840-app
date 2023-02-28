@@ -14,18 +14,18 @@
     box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
 }
 
-#pselector-parent > p {
+#pselector-parent p {
     color: #dadada;
 }
 
-#pselector-parent > select {
+#pselector-parent select {
     width: 200px;
     margin: 10px;
     margin-left: 1px;
     margin-top: 1px;
 }
 
-#p-selector-parent > button {
+#p-selector-parent button {
     margin-left: 10px;
     margin-right: 20px;
 }

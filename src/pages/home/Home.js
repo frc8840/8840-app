@@ -22,6 +22,7 @@ import Dashboard from "../dashboard/Dashboard";
 import IOEditor from "../../scripts/io/editor/IOEditor";
 import LoadLog from "../../scripts/logs/parser/LoadLog";
 import LogPlayback from "../../scripts/logs/playback/LogPlayback";
+import CustomPage from "../custom/CustomPage";
 
 function Home() {
     const [params, setSearchParams] = useSearchParams();
@@ -118,6 +119,12 @@ function Home() {
                 <LoadLog></LoadLog>
                 <LogPlayback></LogPlayback>
                 <SwerveInfo log={true}></SwerveInfo>
+            </div>
+        )
+    } else if (params.get("tab") == "custom") {
+        tab = (
+            <div>
+                <CustomPage></CustomPage>
             </div>
         )
     } else {

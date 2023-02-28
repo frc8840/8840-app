@@ -1,7 +1,7 @@
 import React from "react";
 import Mover from "../mover/Mover";
 import * as THREE from "three";
-import { OBJLoader } from "../libraries/ThreeJS/OBJLoader";
+import { OBJLoader } from "../libraries/ThreeJS/loaders/OBJLoader";
 
 import "./PigeonVisualized.css"
 import { addTabListener } from "../pynetworktables2js/wrapper";

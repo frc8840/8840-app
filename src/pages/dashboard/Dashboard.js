@@ -435,7 +435,7 @@ class Dashboard extends React.Component {
                     <DashboardSidebarContent title="Credits">
                         <h3>Made By</h3>
                         <p>Bay Robotics, FRC Team 8840</p>
-                        <p><a href="https://team8840.org" target="_blank">Website</a> • <a href="https://github.com/frc8840" target="_blank">GitHub</a> • <a href="" target="_blank">Instagram</a></p>
+                        <p><a href="https://team8840.org" target="_blank">Website</a> • <a href="https://github.com/frc8840" target="_blank">GitHub</a> • <a href="https://www.instagram.com/bay_robotics/" target="_blank">Instagram</a></p>
                         <p><a href="https://github.com/frc8840/8840-app" target="_blank">Source Code</a></p>
                         <h3>Contributors</h3>
                         <ul>
@@ -443,10 +443,10 @@ class Dashboard extends React.Component {
                         </ul>
                         <h3>Libraries</h3>
                         <ul>
-                            <li><a href="" target="_blank">pynetworktables2js</a></li>
-                            <li><a href="" target="_blank">Blockly</a></li>
-                            <li><a href="" target="_blank">Three.js</a></li>
-                            <li><a href="" target="_blank">React</a></li>
+                            <li><a href="https://github.com/robotpy/pynetworktables2js" target="_blank">pynetworktables2js</a></li>
+                            <li><a href="https://github.com/google/blockly" target="_blank">Blockly</a></li>
+                            <li><a href="https://github.com/mrdoob/three.js" target="_blank">three.js</a></li>
+                            <li><a href="https://reactjs.org/" target="_blank">React</a></li>
                         </ul>
                     </DashboardSidebarContent>
                 </div>
