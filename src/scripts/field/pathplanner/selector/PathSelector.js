@@ -117,6 +117,13 @@ class PathSelector extends React.Component {
         const modern_select = document.getElementById("path_modern");
         modern_select.innerHTML = "";
 
+        modern_select.onchange = () => {
+            console.log("Selected path", modern_select.value)
+            this.setState({
+                selectedPath: modern_select.value,
+            })
+        }
+
         for (let key of this.state.modern_keys) {
             const option = document.createElement("option");
             option.value = key;
@@ -124,7 +131,7 @@ class PathSelector extends React.Component {
             option.onclick = () => {
                 console.log("Selected path", key)
                 this.setState({
-                    "selectedPath": key,
+                    selectedPath: key,
                 })
             }
             if (key === this.state.selectedPath) option.selected = true;

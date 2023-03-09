@@ -1,5 +1,5 @@
 //Types
-import { FieldTypes } from "../Field";
+import { baseDistanceBetweenPoints, FieldTypes } from "../Field";
 
 //Traditional math functions
 import {dist, prettyMuchSamePoint} from "../../misc/dist"
@@ -18,7 +18,7 @@ const pathDeltaTime = 0.03125;
 
 
 class PathPlanner {
-    constructor(inchesToPixels, trajectorySettings, positions, timelineEvents) {
+    constructor(inchesToPixels, trajectorySettings, positions, timelineEvents, parentRef) {
         const i2p = inchesToPixels;
 
         this.state = {
@@ -55,6 +55,12 @@ class PathPlanner {
         };
 
         this.state.trajectorySettings = Object.assign(this.state.trajectorySettings, trajectorySettings);
+
+        this.parentRef = parentRef;
+
+        this.download = this.download.bind(this);
+        this.load = this.load.bind(this);
+        this.loadFileAndCreateLastHardPoint = this.loadFileAndCreateLastHardPoint.bind(this);
     }
 
     updatePositions(positions) {
@@ -86,6 +92,8 @@ class PathPlanner {
     }
 
     generatePathData() {
+        console.log(this.state.positions);
+
         const translatedGeneratedTime = this.state.timeline.generated.map((timepoint) => {
             const newTimepoint = timepoint.map(event => {
                 const copy = Object.assign({}, event);
@@ -990,6 +998,40 @@ class PathPlanner {
                 y: lastPoint.y,
                 type: FieldTypes.Points.Hard
             })
+        });
+    }
+
+    download() {
+        const data = this.generatePathData();
+
+        const blob = new Blob([JSON.stringify(data)], {type: "application/json"});
+        const url = URL.createObjectURL(blob);
+
+        const link = document.createElement('a');
+        link.download = "path.json";
+        link.href = url;
+        link.click();
+
+        URL.revokeObjectURL(url);
+    }
+
+    load() {
+        if (!(!!window.PathFileLoader)) return;
+
+        window.PathFileLoader.loadFile((PFL) => {
+            for (let i = 0; i < PFL.positions.length; i++) {
+                const position = PFL.positions[i];
+
+                this.addPosition.bind(this)({
+                    x: position.x,
+                    y: position.y,
+                    type: position.type
+                })
+            }
+
+            this.parentRef.state.generatedPath = this.generateBezierCurve({
+                distBetweenPoints: baseDistanceBetweenPoints
+            });
         });
     }
 }

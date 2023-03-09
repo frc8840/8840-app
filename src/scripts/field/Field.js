@@ -1124,13 +1124,7 @@ class Field extends React.Component {
                     end: 5,
                     name: "Move"
                 },
-                {
-                    type: FieldTypes.Timeline.Rotate,
-                    start: 0,
-                    end: 0.1,
-                    name: "15°"
-                }
-            ]),
+            ], this),
 
             positions: [],
             mousePickedUp: -1,
@@ -1471,6 +1465,8 @@ class Field extends React.Component {
                 window.lastLoadedFile = pathName.replace("legacy ", "");
             }
         }
+
+        this.doPathPIDGeneration = this.doPathPIDGeneration.bind(this);
     }
 
     togglePlanningMenu(open=!this.state.planningMenu) {
@@ -2579,6 +2575,8 @@ class Field extends React.Component {
                         <button onClick={this.doSendPath.bind(this)}>Send Path To Robot</button>
                         <button onClick={this.saveGeneratedPath.bind(this)}>Save Generated Path (for 3D Field)</button>
                         <br/>
+                        <button onClick={this.state.planner.download}>Download Path</button>
+                        <button onClick={this.state.planner.load}>Open Path</button>
                         <button onClick={this.state.planner.loadFileAndCreateLastHardPoint}>Load last point from file</button>
                     </>
                 ) : <></>}</div>
@@ -2595,4 +2593,4 @@ const FieldTypes = {
     Timeline: Field.TimelineEvent
 }
 
-export { Field, FieldTypes, chargedUp, rapidReact }
+export { Field, FieldTypes, chargedUp, rapidReact, baseDistanceBetweenPoints }

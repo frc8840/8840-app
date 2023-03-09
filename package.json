@@ -1,6 +1,6 @@
 {
   "name": "8840-app",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "dependencies": {
     "@mdi/js": "^7.1.96",

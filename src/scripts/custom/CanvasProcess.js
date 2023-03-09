@@ -7,6 +7,7 @@ class CanvasSupplier {
         NETWORK_TABLE: "t",
         CALCULATION: "c",
         PERCENTAGE: "p",
+        IF_STATEMENT: "i",
     }
     
     constructor(type, value) {
@@ -27,13 +28,43 @@ class CanvasSupplier {
             this.operation = operation;
         } else if (this.type == CanvasSupplier.Type.NETWORK_TABLE) {
             this.value = decodeURIComponent(this.value);
+
+            this.isList = this.value.endsWith("]");
+
+            if (this.value.endsWith("]")) {
+                const last_start_bracket = this.value.lastIndexOf("[");
+                const index_inList = this.value.substring(last_start_bracket + 1, this.value.length - 1);
+                this.value = this.value.substring(0, last_start_bracket);
+                this.indx = parseInt(index_inList);
+            }
+        } else if (this.type == CanvasSupplier.Type.IF_STATEMENT) {
+            this.value = decodeURIComponent(this.value);
+            this.value = atob(this.value);
+
+            const split = this.value.split("|");
+
+            const leftHand = split[0];
+            const operation = split[1].replace("e", "");
+            const ifElse = split[1].includes("e");
+
+            const rightHand = split[2];
+            const onTrue = split[3];
+            
+            const onFalse = ifElse ? split[4] : null;
+
+            this.leftHand = new CanvasSupplier(leftHand.substring(0, 1), leftHand.substring(2));
+            this.rightHand = new CanvasSupplier(rightHand.substring(0, 1), rightHand.substring(2));
+            this.operation = operation;
+            this.onTrue = new CanvasSupplier(onTrue.substring(0, 1), onTrue.substring(2));
+            this.onFalse = ifElse ? new CanvasSupplier(onFalse.substring(0, 1), onFalse.substring(2)) : null;
+            this.ifElseStatement = ifElse;
         }
     }
 
     get(related_argument, canvas) {
         switch(this.type) {
             case CanvasSupplier.Type.STRING:
-                return this.value;
+                return decodeURIComponent(this.value);
             case CanvasSupplier.Type.NUMBER:
                 return parseFloat(this.value);
             case CanvasSupplier.Type.NETWORK_TABLE:
@@ -46,6 +77,10 @@ class CanvasSupplier {
                 }
 
                 const nt_value = window.nt_cache[this.value];
+
+                if (this.isList) {
+                    return nt_value[this.indx];
+                }
 
                 return nt_value;
             case CanvasSupplier.Type.CALCULATION:
@@ -80,6 +115,44 @@ class CanvasSupplier {
                     return canvas.width * (parseFloat(this.value) / 100);
                 } else if (related_argument == "height" || related_argument == "y") {
                     return canvas.height * (parseFloat(this.value) / 100);
+                }
+            case CanvasSupplier.Type.IF_STATEMENT:
+                const leftHand = this.leftHand.get(related_argument, canvas);
+                const rightHand = this.rightHand.get(related_argument, canvas);
+
+                switch(this.operation) {
+                    case "=":
+                        if (leftHand == rightHand) {
+                            return this.onTrue.get(related_argument, canvas);
+                        }
+                        return this.ifElseStatement ? this.onFalse.get(related_argument, canvas) : 0;
+                    case ">":
+                        if (leftHand > rightHand) {
+                            return this.onTrue.get(related_argument, canvas);
+                        }
+                        return this.ifElseStatement ? this.onFalse.get(related_argument, canvas) : 0;
+                    case "<":
+                        if (leftHand < rightHand) {
+                            return this.onTrue.get(related_argument, canvas);
+                        }
+                        return this.ifElseStatement ? this.onFalse.get(related_argument, canvas) : 0;
+                    case "G":
+                        if (leftHand >= rightHand) {
+                            return this.onTrue.get(related_argument, canvas);
+                        }
+                        return this.ifElseStatement ? this.onFalse.get(related_argument, canvas) : 0;
+                    case "L":
+                        if (leftHand <= rightHand) {
+                            return this.onTrue.get(related_argument, canvas);
+                        }
+                        return this.ifElseStatement ? this.onFalse.get(related_argument, canvas) : 0;
+                    case "!":
+                        if (leftHand != rightHand) {
+                            return this.onTrue.get(related_argument, canvas);
+                        }
+                        return this.ifElseStatement ? this.onFalse.get(related_argument, canvas) : 0;
+                    default: 
+                        return 0;
                 }
             default:
                 return this.value;

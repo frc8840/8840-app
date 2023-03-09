@@ -65,8 +65,14 @@ class Field3D extends React.Component {
 
             robot: {
                 ref: "robot",
+                expectRef: "expectedRobot",
                 init: false,
                 position: {
+                    x: new Unit(0, Unit.Type.METERS),
+                    y: new Unit(0, Unit.Type.METERS),
+                    rot: new Angle(0, Angle.Degrees)
+                },
+                expectedPos: {
                     x: new Unit(0, Unit.Type.METERS),
                     y: new Unit(0, Unit.Type.METERS),
                     rot: new Angle(0, Angle.Degrees)
@@ -84,7 +90,19 @@ class Field3D extends React.Component {
 
                         robotObject.position.x = xRelative;
                         robotObject.position.z = yRelative;
-                        robotObject.rotation.z = rot.get(Angle.Radians);
+                        robotObject.rotation.y = rot.get(Angle.Radians);
+
+                        const expectedRobot = this.getObj(this.state.robot.expectRef);
+                        const expectedX = this.state.robot.expectedPos.x;
+                        const expectedY = this.state.robot.expectedPos.y;
+                        const expectedRot = this.state.robot.expectedPos.rot;
+
+                        const expectedXRelative = expectedX.getcu(unitsPerInch, Unit.Type.INCHES) - (fieldWidthInUnits / 2);
+                        const expectedYRelative = (fieldHeightInUnits / 2) - expectedY.getcu(unitsPerInch, Unit.Type.INCHES);
+
+                        expectedRobot.position.x = expectedXRelative;
+                        expectedRobot.position.z = expectedYRelative;
+                        expectedRobot.rotation.y = expectedRot.get(Angle.Radians);
                     }
                 }
             },
@@ -92,7 +110,7 @@ class Field3D extends React.Component {
             autoLoader: {
                 display: -1,
                 cacheDisplay: -1,
-                cacheActive: true
+                cacheActive: true,
             },
 
             cameraRotation: new Angle(90, Angle.Degrees),
@@ -124,8 +142,18 @@ class Field3D extends React.Component {
                         this.state.robot.position.rot = rot;
 
                         this.state.robot.update();
+                    } else if (splitKey[2] == "Robot") {
+                        const x = new Unit(value[0], Unit.Type.METERS);
+                        const y = new Unit(value[1], Unit.Type.METERS);
+                        const rot = new Angle(value[2], Unit.Type.DEGREES);
+
+                        this.state.robot.expectedPos.x = x;
+                        this.state.robot.expectedPos.y = y;
+                        this.state.robot.expectedPos.rot = rot;
+
+                        this.state.robot.update();
                     }
-                } 
+                }
             }
         });
 
@@ -139,6 +167,7 @@ class Field3D extends React.Component {
         this.getObj = this.getObj.bind(this);
         this.topDown = this.topDown.bind(this);
         this.autoLoaderPaths = this.autoLoaderPaths.bind(this);
+        this.removeFromScene = this.removeFromScene.bind(this);
     }
 
     addToScene(name, obj) {
@@ -153,6 +182,13 @@ class Field3D extends React.Component {
 
         this.state.scene.add(obj);
         this.state.objects[name] = obj;
+    }
+
+    removeFromScene(name) {
+        if (this.state.objects[name] != null) {
+            this.state.scene.remove(this.state.objects[name]);
+            delete this.state.objects[name];
+        }
     }
 
     getObj(name) {
@@ -208,7 +244,23 @@ class Field3D extends React.Component {
         robot.position.y = 0.21;
         robot.position.z = 0;
 
-        addToScene("robot", robot);
+        addToScene(this.state.robot.ref, robot);
+
+        const robotExpectedGeometry = new THREE.BoxGeometry(
+            Field3D.SwerveInfo.width.getcu(unitsPerInch, Unit.Type.INCHES),
+            0.2,
+            Field3D.SwerveInfo.length.getcu(unitsPerInch, Unit.Type.INCHES)
+        );
+        const robotExpectedMaterial = new THREE.MeshBasicMaterial({
+            color: 0x03fcd7
+        });
+        
+        const robotExpected = new THREE.Mesh(robotExpectedGeometry, robotExpectedMaterial);
+        robotExpected.position.x = 0;
+        robotExpected.position.y = 0.21;
+        robotExpected.position.z = 0;
+
+        addToScene(this.state.robot.expectRef, robotExpected);
 
         this.state.robot.init = true;
         this.state.robot.update();
@@ -242,9 +294,12 @@ class Field3D extends React.Component {
         const getObj = this.getObj.bind(this);
 
         if (Field3D.AutoLoader && Field3D.AutoLoader.success) {
+            //console.log(this.state.autoLoader.cacheDisplay, Field3D.AutoLoader.onIndex)
+
             if (this.state.autoLoader.cacheDisplay != Field3D.AutoLoader.onIndex) {
                 this.state.autoLoader.cacheDisplay = Field3D.AutoLoader.onIndex;
                 this.state.autoLoader.display = Field3D.AutoLoader.onIndex;
+                console.log("Switched paths, detected change!")
                 this.autoLoaderPaths();
             }
 
@@ -411,6 +466,13 @@ class Field3D extends React.Component {
         const defaultColor = 0xed1cd5;
 
         let pths = 0;
+
+        //first we'll remove all the path objects
+        for (let key of Object.keys(this.state.objects)) {
+            if (key.startsWith("ap-c-")) {
+                this.removeFromScene(key);
+            }
+        }
 
         //console.log("Loading paths! Count", Field3D.AutoLoader.conjugates.length)
         for (let i = 0; i < Field3D.AutoLoader.conjugates.length; i++) {

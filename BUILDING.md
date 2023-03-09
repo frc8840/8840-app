@@ -7,3 +7,5 @@ Note: If you build this with gh-pages, you'll have to add back in `package.json`
 ```
 
 This is for building gh-pages specifically for this repository.
+
+Then run `npm run deploy` to build and deploy to gh-pages.

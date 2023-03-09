@@ -111,6 +111,7 @@ function Home() {
         tab = (
             <div>
                 <Field3D></Field3D>
+                <PathSelector></PathSelector>
             </div>
         )
     } else if (params.get("tab") == "log") {

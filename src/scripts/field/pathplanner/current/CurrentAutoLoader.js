@@ -41,13 +41,18 @@ class CurrentAutoLoader {
             this.tryAgainInTen();
         }
 
-        addTabListener("auton", (key, value, isNew) => {
-            if (key == "i") {
-                this.onIndex = value;
-            } else if (key == "a") {
-                this.active = value;
+        setInterval(() => {
+            if (!!window.nt_cache) {
+                const index = Object.keys(window.nt_cache).includes("/8840-lib/auton/i") ? window.nt_cache["/8840-lib/auton/i"] : -1;
+                const active = Object.keys(window.nt_cache).includes("/8840-lib/auton/a") ? window.nt_cache["/8840-lib/auton/a"] : false;
+
+                if (index != this.onIndex || active != this.active) {
+                    console.log("[Autonomous] Active: " + this.active + " -> " + active + ", Index: " + this.onIndex + " -> " + index);
+                    this.onIndex = index;
+                    this.active = active;
+                }
             }
-        });
+        }, 10)
     }
     tryAgainInTen() {
         setTimeout(() => {
