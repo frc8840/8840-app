@@ -62,10 +62,12 @@ class Field3D extends React.Component {
             displays: {
                 path: null
             },
-
+            funMove: true,
+            funT: 0,
             robot: {
                 ref: "robot",
                 expectRef: "expectedRobot",
+                estRef: "estimatedRobot",
                 init: false,
                 position: {
                     x: new Unit(0, Unit.Type.METERS),
@@ -76,6 +78,11 @@ class Field3D extends React.Component {
                     x: new Unit(0, Unit.Type.METERS),
                     y: new Unit(0, Unit.Type.METERS),
                     rot: new Angle(0, Angle.Degrees)
+                },
+                estimatedPos: {
+                    x: new Unit(0, Unit.Type.METERS),
+                    y: new Unit(0, Unit.Type.METERS),
+                    rot: new Angle(0, Angle.Degrees),
                 },
                 update: () => {
                     if (this.state.robot.init) {
@@ -103,6 +110,18 @@ class Field3D extends React.Component {
                         expectedRobot.position.x = expectedXRelative;
                         expectedRobot.position.z = expectedYRelative;
                         expectedRobot.rotation.y = expectedRot.get(Angle.Radians);
+
+                        const estimatedRobot = this.getObj(this.state.robot.estRef);
+                        const estimatedX = this.state.robot.estimatedPos.x;
+                        const estimatedY = this.state.robot.estimatedPos.y;
+                        const estimatedRot = this.state.robot.estimatedPos.rot;
+
+                        const estimatedXRelative = estimatedX.getcu(unitsPerInch, Unit.Type.INCHES) - (fieldWidthInUnits / 2);
+                        const estimatedYRelative = (fieldHeightInUnits / 2) - estimatedY.getcu(unitsPerInch, Unit.Type.INCHES);
+
+                        estimatedRobot.position.x = estimatedXRelative;
+                        estimatedRobot.position.z = estimatedYRelative;
+                        estimatedRobot.rotation.y = estimatedRot.get(Angle.Radians);
                     }
                 }
             },
@@ -126,6 +145,7 @@ class Field3D extends React.Component {
         }
 
         addTabListener("all_ignore_prefix", (key, value, isNew) => {
+            if (this.state.funMove) return;
             if (key.startsWith("SmartDashboard") || key.startsWith("/SmartDashboard")) {
                 if (key.startsWith("/")) key = key.substring(1);
                 
@@ -150,6 +170,16 @@ class Field3D extends React.Component {
                         this.state.robot.expectedPos.x = x;
                         this.state.robot.expectedPos.y = y;
                         this.state.robot.expectedPos.rot = rot;
+
+                        this.state.robot.update();
+                    } else if (splitKey[2] == "EstPose") {
+                        const x = new Unit(value[0], Unit.Type.METERS);
+                        const y = new Unit(value[1], Unit.Type.METERS);
+                        const rot = new Angle(value[2], Unit.Type.DEGREES);
+
+                        this.state.robot.estimatedPos.x = x;
+                        this.state.robot.estimatedPos.y = y;
+                        this.state.robot.estimatedPos.rot = rot;
 
                         this.state.robot.update();
                     }
@@ -221,13 +251,42 @@ class Field3D extends React.Component {
                 } );
 
                 addToScene("field", object.scene);
-                console.log("Added object!")
+                console.log("Added FIELD object!")
             },
             function (xhr) {},
             function (error) {
                 console.log( 'An error happened', error );
             }
         );
+
+        // const loader2 = new GLTFLoader();
+
+        // loader2.load(
+        //     `/models/robots/2023/2023robot.glb`, 
+        //     function ( object ) {
+        //         //compute the object vertex normals
+        //         object.scene.traverse( function ( child ) {
+        //             if ( child.isMesh ) {
+        //                 child.geometry.computeVertexNormals();
+
+        //                 child.castShadow = true;
+        //                 child.wireframe = true;
+        //                 child.receiveShadow = true;
+
+        //                 if ( child.material ) child.material.metalness = 0;
+
+        //                 console.log("Computed vertex normals!");
+        //             }
+        //         } );
+
+        //         addToScene("robot", object.scene);
+        //         console.log("Added ROBOT object!")
+        //     },
+        //     function (xhr) {},
+        //     function (error) {
+        //         console.log( 'An error happened w/ robot model ', error );
+        //     }
+        // )
 
         //Create the robot, it'll just be a cube with dimensions of the robot
         const robotGeometry = new THREE.BoxGeometry(
@@ -262,6 +321,23 @@ class Field3D extends React.Component {
 
         addToScene(this.state.robot.expectRef, robotExpected);
 
+        const estimatedRobotGeometry = new THREE.BoxGeometry(
+            Field3D.SwerveInfo.width.getcu(unitsPerInch, Unit.Type.INCHES),
+            0.2,
+            Field3D.SwerveInfo.length.getcu(unitsPerInch, Unit.Type.INCHES)
+        );
+        const estimatedRobotMaterial = new THREE.MeshBasicMaterial({
+            color: 0xf7b21b
+        });
+
+        const estimatedRobot = new THREE.Mesh(estimatedRobotGeometry, estimatedRobotMaterial);
+
+        estimatedRobot.position.x = 0;
+        estimatedRobot.position.y = 0.21;
+        estimatedRobot.position.z = 0;
+
+        addToScene(this.state.robot.estRef, estimatedRobot);
+
         this.state.robot.init = true;
         this.state.robot.update();
 
@@ -292,6 +368,14 @@ class Field3D extends React.Component {
 
     animate() {
         const getObj = this.getObj.bind(this);
+
+        if (this.state.funMove) {
+            this.state.funT+= 0.012;
+
+            const robotObject = this.getObj(this.state.robot.ref);
+            robotObject.position.x = Math.cos(this.state.funT) * 3;
+            robotObject.position.z = Math.sin(this.state.funT) * 3;
+        }
 
         if (Field3D.AutoLoader && Field3D.AutoLoader.success) {
             //console.log(this.state.autoLoader.cacheDisplay, Field3D.AutoLoader.onIndex)

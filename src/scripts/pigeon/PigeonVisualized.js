@@ -37,7 +37,7 @@ class PigeonVisualized extends React.Component {
                 //ex: Pigeon Gyroscope/0/yaw pitch roll/value
 
                 const isYawPitchRoll = gsk(2) == "yaw pitch roll";
-                const isValue = gsk(3) == "value";
+                const isValue = gsk(3) == "v";
                 
                 if (isValue && isYawPitchRoll) {
                     this.state.info = {

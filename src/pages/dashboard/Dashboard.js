@@ -467,6 +467,10 @@ class Dashboard extends React.Component {
                                     <div onClick={this.redirect.bind("/?tab=io")} style={{backgroundColor: "rgb(106, 104, 196)"}}>IO</div>
                                     <div onClick={this.redirect.bind("/?tab=3d")} style={{backgroundColor: "rgb(240, 205, 76)"}}>3D</div>
                                 </div>
+                                <div className="links-row">
+                                    <div onClick={this.redirect.bind("/?tab=custom")} style={{backgroundColor: "#fab319"}}>Custom</div>
+                                    <div onClick={this.redirect.bind("/?tab=log")} style={{backgroundColor: "#8634eb"}}>Logging</div>
+                                </div>
                             </div>
                         </div>
                         <div className="nt-metrics">

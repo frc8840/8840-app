@@ -62,6 +62,52 @@ class IOEditor extends React.Component {
             this.updateEditingList();
         })
 
+        setInterval(() => {
+            const editing = this.state.currentlyEditing;
+
+            if (editing == null) {
+                return;
+            }
+
+            let index = 0;
+            let name = editing + "";
+
+            //get the second last character of the name
+            const secondLastChar = name.charAt(name.length - 2);
+            const lastChar = name.charAt(name.length - 1);
+
+            if (secondLastChar == "/" && parseInt(lastChar) >= 0) {
+                index = parseInt(lastChar);
+
+                //remove the last two characters
+                name = name.substring(0, name.length - 2);
+            }
+
+            const key = name + "/" + index;
+
+            const object = this.state.cache[name][index];
+
+            const methodNames = Object.keys(object);
+
+            for (let method of methodNames) {
+                if (method == "real") continue;
+
+                if (Object.keys(object[method]).includes("v")) {
+                    const id = "io-editor-value-" + btoa(key + "-" + method);
+
+                    const ele = document.getElementById(id);
+
+                    if (ele) {
+                        const value = object[method].v;
+
+                        if (ele.value != value) {
+                            ele.textContent = value;
+                        }
+                    }
+                }
+            }
+        }, 1000 / 60);
+
         this.writeValue.bind(this);
         this.updateEditingList.bind(this);
         this.updateInformation.bind(this);
@@ -98,27 +144,44 @@ class IOEditor extends React.Component {
         list.unshift(noneText);
 
         const select = document.getElementById("io-editing-list");
+        
+        let differentItems = false;
 
-        select.innerHTML = "";
-
-        for (let item of list) {
-            const option = document.createElement("option");
-            option.value = item;
-            option.innerHTML = item;
-
-            select.appendChild(option);
-        }
-
-        select.value = this.state.currentlyEditing || noneText;
-
-        select.onchange = () => {
-            if (select.value === noneText) {
-                this.state.currentlyEditing = null;
-            } else {
-                this.state.currentlyEditing = select.value;
+        for (let i = 0; i < list.length; i++) {
+            if (select.options.length != list.length) {
+                differentItems = true;
+                break;
             }
 
-            this.updateInformation();
+            if (select.options[i].value != list[i]) {
+                differentItems = true;
+                break;
+            }
+        }
+
+        if (differentItems) {
+
+            select.innerHTML = "";
+
+            for (let item of list) {
+                const option = document.createElement("option");
+                option.value = item;
+                option.innerHTML = item;
+
+                select.appendChild(option);
+            }
+
+            select.value = this.state.currentlyEditing || noneText;
+
+            select.onchange = () => {
+                if (select.value === noneText) {
+                    this.state.currentlyEditing = null;
+                } else {
+                    this.state.currentlyEditing = select.value;
+                }
+
+                this.updateInformation();
+            }
         }
     }
 
@@ -194,6 +257,7 @@ class IOEditor extends React.Component {
                 
                 const valueInput = document.createElement("span");
                 valueInput.textContent = object[method].v;
+                valueInput.id = "io-editor-value-" + btoa(key + "-" + method);
 
                 valueEle.appendChild(valueInput);
 

@@ -31,9 +31,9 @@ class PathPlanner {
                 }
             ],
             trajectorySettings: { //settings for generating the path and PID
-                maxSpeed: new Unit(4, Unit.Type.METERS).getcu(i2p, Unit.Type.INCHES), //m/s
+                maxSpeed: new Unit(6, Unit.Type.FEET).getcu(i2p, Unit.Type.INCHES), //m/s
                 minSpeed: new Unit(0.03 * 3, Unit.Type.METERS).getcu(i2p, Unit.Type.INCHES), //m/s
-                maxAccel: new Unit(2.5, Unit.Type.METERS).getcu(i2p, Unit.Type.INCHES), //m/s^2
+                maxAccel: new Unit(3, Unit.Type.INCHES).getcu(i2p, Unit.Type.INCHES), //m/s^2
                 pid: new PID(0.075, 0.001, 0.3),
                 time: 15, //s
                 deltaTime: pathDeltaTime, //s
@@ -715,7 +715,14 @@ class PathPlanner {
                 //pid.reset();
             } else if (movement / this.state.trajectorySettings.deltaTime > maxVelocity) {
                 if (__verbose) console.log("was higher than max velocity")
-                movement = maxVelocity * this.state.trajectorySettings.deltaTime;
+
+                if (maxVelocity - lastVelocity > maxAcceleration) {
+                    if (__verbose) console.log("was higher than max acceleration")
+                    movement = (lastVelocity + maxAcceleration) * this.state.trajectorySettings.deltaTime;
+                } else {
+                    movement = maxVelocity * this.state.trajectorySettings.deltaTime;
+                }
+
                 //pid.reset();
             }
 
