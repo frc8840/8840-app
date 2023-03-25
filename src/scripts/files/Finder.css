@@ -1,0 +1,119 @@
+@import url('https://fonts.googleapis.com/css2?family=Courier+Prime&display=swap');
+
+#finder-parent {
+    position: absolute;
+    top: 300px;
+    left: 50px;
+    padding: 10px;
+    background-color: #404040;
+    border: 1px solid #000000;
+    /* slight drop shadow */
+    -webkit-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+    box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+    color: white;
+}
+
+#finder-parent > canvas {
+    margin-top: 10px;
+}
+
+#home-folder {
+    font-family: 'Courier Prime', monospace;
+    font-size: 14px;
+}
+
+#finder-viewer {
+    width: 500px;
+    height: 200px;
+    border: 1px solid #000000;
+    overflow-y: scroll;
+    overflow-x: hidden;
+}
+
+#folder-additions {
+    font-family: 'Courier Prime', monospace;
+    font-size: 14px;
+}
+
+.finder-file {
+    font-family: 'Courier Prime', monospace;
+    font-size: 12px;
+    padding: 5px;
+    border-bottom: 1px solid #000000;
+
+    display: flex;
+
+    flex-direction: row;
+    justify-content: space-between;
+
+    transition-duration: 0.2s;
+    cursor: pointer;
+}
+
+.finder-file:nth-child(odd) {
+    background-color: #303030;
+}
+
+.finder-file:nth-child(even) {
+    background-color: #404040;
+}
+
+.finder-file:hover {
+    background-color: #505050;
+}
+
+.finder-file-leftside {
+    display: flex;
+    flex-direction: row;
+}
+
+.finder-file-leftside:first-child {
+    /*center vertically*/
+    align-items: center;
+}
+
+.finder-file-leftside > p {
+    margin-left: 5px;
+}
+
+#finder-header {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+}
+
+#finder-tools {
+    /*center vertically*/
+    align-self: center;
+    
+    display: flex;
+    flex-direction: row;
+}
+
+#finder-tools div {
+    margin-right: 10px;
+    cursor: pointer;
+    transition-duration: 0.2s;
+}
+
+#finder-tools div:hover {
+    color: #cdcdcd;
+}
+
+#finder-title {
+    align-self: center;
+    
+    display: flex;
+    flex-direction: row;
+}
+
+#finder-title:nth-child(1) {
+    /*center vertically*/
+    align-items: center;
+    margin-left: 2px;
+}
+
+#finder-title p {
+    padding-left: 6px;
+}

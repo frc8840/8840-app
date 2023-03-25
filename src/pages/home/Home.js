@@ -23,6 +23,7 @@ import IOEditor from "../../scripts/io/editor/IOEditor";
 import LoadLog from "../../scripts/logs/parser/LoadLog";
 import LogPlayback from "../../scripts/logs/playback/LogPlayback";
 import CustomPage from "../custom/CustomPage";
+import Finder from "../../scripts/files/Finder";
 
 function Home() {
     const [params, setSearchParams] = useSearchParams();
@@ -75,6 +76,7 @@ function Home() {
             <div>
                 <Field inchToPixel={1.5} simtype={Field.SimulType.Planning} game={"chargedUp"}></Field>
                 <PathSelector></PathSelector>
+                <Finder></Finder>
             </div>
         )
     } else if (params.get("tab") === "till") {
@@ -105,6 +107,7 @@ function Home() {
                 <IOCanCoder></IOCanCoder>
                 <IOSwerveModule></IOSwerveModule>
                 <IOEditor></IOEditor>
+                <Finder></Finder>
             </div>
         )
     } else if (params.get("tab") == "3d") {
