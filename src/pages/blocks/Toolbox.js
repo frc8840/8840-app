@@ -267,12 +267,12 @@ Blockly.Blocks['swerve_drive_movement'] = {
     init: function() {
         this.appendDummyInput()
             .appendField("Swerve Drive Movement");
-        this.appendValueInput("x")
+        this.appendValueInput("forward")
             .setCheck("Number")
-            .appendField("X:");
-        this.appendValueInput("y")
+            .appendField("Forward:");
+        this.appendValueInput("strafe")
             .setCheck("Number")
-            .appendField("Y:")
+            .appendField("Strafe:")
         this.appendValueInput("rotation")
             .setCheck("Number")
             .appendField("Rotation:");
@@ -318,7 +318,7 @@ Blockly.Blocks['speed_controller'] = {
  */
 
 // Block for variable getter.
-Blockly.Blocks['variables_get_speed_controller'] = {
+Blockly.Blocks['speed_controller_get'] = {
     init: function() {
         this.appendDummyInput()
             .appendField("Speed Controller ")
@@ -330,7 +330,7 @@ Blockly.Blocks['variables_get_speed_controller'] = {
     }
 };
 
-Blockly.Blocks['variables_get_speed_controller_from_port'] ={
+Blockly.Blocks['get_speed_controller_from_port'] ={
     init: function() {
         this.appendDummyInput()
             .appendField("Speed Controller, Port: ")
@@ -343,7 +343,7 @@ Blockly.Blocks['variables_get_speed_controller_from_port'] ={
 }
   
   // Block for variable setter.
-Blockly.Blocks['variables_set_speed_controller'] = {
+Blockly.Blocks['speed_controller_set'] = {
     init: function() {
         this.appendValueInput("NAME")
             .setCheck("speed_controller")
@@ -359,7 +359,7 @@ Blockly.Blocks['variables_set_speed_controller'] = {
     }
 };
 
-Blockly.Blocks['register_speed_controller'] = {
+Blockly.Blocks['speed_controller_register'] = {
     init: function() {
         this.appendDummyInput()
             .appendField("Create Speed Controller");
@@ -378,7 +378,7 @@ Blockly.Blocks['register_speed_controller'] = {
  * Moving Speed Controllers
  */
 
-Blockly.Blocks['move_speed_controller'] = {
+Blockly.Blocks['speed_controller_move'] = {
     init: function() {
         this.appendDummyInput()
             .appendField("Run Speed Controller")
@@ -504,11 +504,11 @@ const Toolbox = {
                 },
                 {
                     "kind": "block",
-                    "type": "register_speed_controller"
+                    "type": "speed_controller_register"
                 },
                 {
                     "kind": "block",
-                    "type": "variables_get_speed_controller_from_port"
+                    "type": "get_speed_controller_from_port"
                 },
                 // {
                 //     "kind": "block",
@@ -520,7 +520,7 @@ const Toolbox = {
                 // },
                 {
                     "kind": "block",
-                    "type": "move_speed_controller"
+                    "type": "speed_controller_move"
                 }
             ]
         },

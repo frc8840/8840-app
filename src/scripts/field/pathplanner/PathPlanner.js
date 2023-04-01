@@ -12,10 +12,33 @@ import { Unit, Angle } from "../../misc/unit";
 import PositionEvent from "./PositionEvent";
 
 import PathFileLoader from "./files/PathFileLoader";
+import SaveManager from "../../save/SaveManager";
 
 //Constants
 const pathDeltaTime = 0.03125;
 
+/*
+DEFINE TABLE = {}
+DEFINE TOTAL DISTANCE = 0
+DEFINE LAST POINT = null
+
+INCREASE T BY DELTA T:
+    IF LAST POINT IS NULL:
+        SET LAST POINT TO FIRST POINT
+        CONTINUE
+    
+    CALCULATE CURRENT POINT FOR T
+
+    FIND DISTANCE FROM LAST POINT AND CURRENT POINT
+
+    ADD DISTANCE TO TOTAL DISTANCE
+
+    ADD CURRENT POINT TO TABLE, WITH KEY OF TOTAL DISTANCE
+
+    SET LAST POINT TO CURRENT POINT
+
+RETURN TABLE
+*/
 
 class PathPlanner {
     constructor(inchesToPixels, trajectorySettings, positions, timelineEvents, parentRef) {
@@ -61,6 +84,7 @@ class PathPlanner {
         this.download = this.download.bind(this);
         this.load = this.load.bind(this);
         this.loadFileAndCreateLastHardPoint = this.loadFileAndCreateLastHardPoint.bind(this);
+        this.updateTrajectorySettings = this.updateTrajectorySettings.bind(this);
     }
 
     updatePositions(positions) {
@@ -149,8 +173,8 @@ class PathPlanner {
                 "Content-Type": "application/json",
             },
             body: JSON.stringify(data),
-        }).then((res) => res.json()).then(data => {
-            console.log(data);
+        }).then((res) => res.json()).then(_data => {
+            console.log(_data);
             
             alert("Sent path to robot with name: " + data.name);
         });
@@ -336,10 +360,23 @@ class PathPlanner {
         return curves;
     }
 
+    updateTrajectorySettings() {
+        const i2p = this.state.i2p;
+        const pathsettings = SaveManager.load("/pathsettings");
+        if (pathsettings != null) {
+            this.state.trajectorySettings.pid = new PID(pathsettings.pid.p, pathsettings.pid.i, pathsettings.pid.d);
+            this.state.trajectorySettings.maxSpeed = new Unit(pathsettings.maxSpeed, Unit.Type.INCHES).getcu(i2p, Unit.Type.INCHES);
+            this.state.trajectorySettings.maxAccel = new Unit(pathsettings.maxAccel, Unit.Type.INCHES).getcu(i2p, Unit.Type.INCHES);
+            this.state.trajectorySettings.minSpeed = new Unit(pathsettings.minSpeed, Unit.Type.INCHES).getcu(i2p, Unit.Type.INCHES);
+        }
+    }
+
     generatePath(start=(this.state.positions.length > 0 ? this.state.positions[0] : {x:0,y:0}), skipHardPoints=-1, __verbose=false, returnInsteadOfSet=false) {
         console.time("generate path")
 
         const inchesToPixel = this.state.i2p;
+
+        this.updateTrajectorySettings();
 
         /**
          * This generates a series of points that the robot will follow by time.

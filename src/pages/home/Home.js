@@ -24,6 +24,7 @@ import LoadLog from "../../scripts/logs/parser/LoadLog";
 import LogPlayback from "../../scripts/logs/playback/LogPlayback";
 import CustomPage from "../custom/CustomPage";
 import Finder from "../../scripts/files/Finder";
+import PathSettings from "../../scripts/field/pathplanner/settings/PathSettings";
 
 function Home() {
     const [params, setSearchParams] = useSearchParams();
@@ -76,6 +77,7 @@ function Home() {
             <div>
                 <Field inchToPixel={1.5} simtype={Field.SimulType.Planning} game={"chargedUp"}></Field>
                 <PathSelector></PathSelector>
+                <PathSettings></PathSettings>
                 <Finder></Finder>
             </div>
         )
@@ -83,7 +85,15 @@ function Home() {
         tab = (<Till></Till>);
         useHosting = false;
     } else if (params.get("tab") === "blocks") {
-        tab = (<BlockPage></BlockPage>)
+        tab = (
+            <div style={{
+                width: "100vw", 
+                height: "100vh",
+                backgroundColor: "#242424"
+            }}>
+                <BlockPage></BlockPage>
+            </div>
+        )
         useHosting = false;
         return (tab);
     } else if (params.get("tab") === "controls") {

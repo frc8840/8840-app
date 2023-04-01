@@ -1,0 +1,37 @@
+#path-settings-parent {
+    position: absolute;
+    top: 300px;
+    left: 50px;
+    padding: 10px;
+    background-color: #404040;
+    border: 1px solid #000000;
+    /* slight drop shadow */
+    -webkit-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+    -moz-box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+    box-shadow: 0px 0px 5px 0px rgba(0,0,0,0.75);
+}
+
+#path-settings-parent > canvas {
+    margin-top: 10px;
+}
+
+#path-settings-content {
+    color: white;
+}
+
+#path-settings-content input {
+    width: 100px;
+    margin-top: 5px;
+    margin-bottom: 5px;
+    border-radius: 2px;
+    border: 1px solid #000000;
+    /*allow user to select text in input*/
+    -webkit-user-select: text;
+    -moz-user-select: text;
+    -ms-user-select: text;
+    user-select: text;
+    /*allow user edits*/
+    -webkit-user-modify: read-write-plaintext-only;
+    -moz-user-modify: read-write-plaintext-only;
+    -ms-user-modify: read-write-plaintext-only;
+}

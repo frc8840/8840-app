@@ -2388,6 +2388,10 @@ class Field extends React.Component {
         }
         
         const sk = () => {
+            if ([1,2,3,4,5,6,7,8,9,0,"backspace","f12"].map(e => e.toString()).includes(lk)) {
+                return;
+            }
+
             e.preventDefault();
             e.stopPropagation();
             

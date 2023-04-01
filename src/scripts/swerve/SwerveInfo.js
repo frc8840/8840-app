@@ -47,6 +47,8 @@ class SwerveInfo extends React.Component {
 
         let isLog = Object.keys(props).includes("log") ? props.log : false;
 
+        //console.log("Is Log? ", isLog)
+
         this.state = {
             swerveName: "swerve",
             modules: newMods,
@@ -61,7 +63,7 @@ class SwerveInfo extends React.Component {
             throughLog: isLog,
         }
 
-        if (this.state.throughLog) {
+        if (!isLog) {
             addTabListener("desired_swerve_drive", (key, value, isNew) => {
                 //Get info
                 const modNum = key.split("/")[0];

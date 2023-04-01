@@ -4,6 +4,11 @@ import { mdiArrowLeft, mdiArrowRight, mdiClose, mdiMenuDown, mdiMenuRight } from
 import "./Dashboard.css"
 import Icon from "@mdi/react";
 
+import { defaults as ppDefaults } from "../../scripts/field/pathplanner/settings/PathSettings";
+import SaveManager from "../../scripts/save/SaveManager";
+import { Unit } from "../../scripts/misc/unit";
+import PID from "../../scripts/pid/PID";
+
 const emojis = {
     locked: "🔒",
     unlocked: "🔓"
@@ -210,6 +215,14 @@ class Dashboard extends React.Component {
             maxVelocity = savedSettings.maxVelocity;
         }
 
+        let pathPlanning = ppDefaults;
+
+        if (SaveManager.load("/pathsettings") != null) {
+            pathPlanning = SaveManager.load("/pathsettings");
+            
+            pathPlanning = Object.assign(ppDefaults, pathPlanning);
+        }
+
         let logWriterName = "EmptyLogWriter";
         let eventListenerName = "EmptyEventListener";
         let lockLogWriter = false;
@@ -228,12 +241,14 @@ class Dashboard extends React.Component {
             lockEventListener,
             robotWidth,
             robotLength,
-            maxVelocity
+            maxVelocity,
+            pathPlanning
         }
 
         this.toggleSidebarOpen = this.toggleSidebarOpen.bind(this);
         this.sendPreferences = this.sendPreferences.bind(this);
         this.saveSwerveSettings = this.saveSwerveSettings.bind(this);
+        this.savePathPlanningSettings = this.savePathPlanningSettings.bind(this);
     }
 
     toggleSidebarOpen() {
@@ -363,6 +378,23 @@ class Dashboard extends React.Component {
         }))
     }
 
+    savePathPlanningSettings() {
+        const tbSaved = {
+            maxSpeed: parseFloat(document.getElementById("path-planning-max-velocity").value),
+            minSpeed: parseFloat(document.getElementById("path-planning-min-velocity").value),
+            maxAccel: parseFloat(document.getElementById("path-planning-max-acceleration").value),
+            pid: new PID(
+                parseFloat(document.getElementById("path-planning-p").value),
+                parseFloat(document.getElementById("path-planning-i").value),
+                parseFloat(document.getElementById("path-planning-d").value)
+            )
+        };
+
+        console.log("Saving path settings!", tbSaved)
+
+        SaveManager.save("/pathsettings", tbSaved)
+    }
+
     redirect(path=null) {
         //if path is null, then the bind will pass the path
         window.location.href = typeof path == "object" ? String(this) : String(path);
@@ -432,6 +464,27 @@ class Dashboard extends React.Component {
                         <input defaultValue={this.state.maxVelocity} min={0} id="max-velocity" name="max-velocity" type="number" />
                         <button className="sidebar-button" onClick={this.saveSwerveSettings}>Save</button>
                     </DashboardSidebarContent>
+                    <DashboardSidebarContent title="Path Planning">
+                        <p>P</p>
+                        <input step={0.001} defaultValue={this.state.pathPlanning.pid.p} min={0} id="path-planning-p" name="path-planning-p" type="number" />
+                        <DashboardLockInput target={"path-planning-p"} forceState={false} defaultValue={false}/>
+                        <p>I</p>
+                        <input step={0.001} defaultValue={this.state.pathPlanning.pid.i} min={0} id="path-planning-i" name="path-planning-i" type="number" />
+                        <DashboardLockInput target={"path-planning-i"} forceState={false} defaultValue={false}/>
+                        <p>D</p>
+                        <input step={0.001} defaultValue={this.state.pathPlanning.pid.d} min={0} id="path-planning-d" name="path-planning-d" type="number" />
+                        <DashboardLockInput target={"path-planning-d"} forceState={false} defaultValue={false}/>
+                        <p>Max Velocity (in/s)</p>
+                        <input defaultValue={this.state.pathPlanning.maxSpeed} min={0} id="path-planning-max-velocity" name="path-planning-max-velocity" type="number" />
+                        <DashboardLockInput target={"path-planning-max-velocity"} forceState={false} defaultValue={false}/>
+                        <p>Min Velocity (in/s)</p>
+                        <input defaultValue={this.state.pathPlanning.minSpeed} min={0} id="path-planning-min-velocity" name="path-planning-min-velocity" type="number" />
+                        <DashboardLockInput target={"path-planning-min-velocity"} forceState={false} defaultValue={false}/>
+                        <p>Max Acceleration (in/s^2)</p>
+                        <input defaultValue={this.state.pathPlanning.maxAccel} min={0} id="path-planning-max-acceleration" name="path-planning-max-acceleration" type="number" />
+                        <DashboardLockInput target={"path-planning-max-acceleration"} forceState={false} defaultValue={false}/>
+                        <button className="sidebar-button" onClick={this.savePathPlanningSettings}>Save</button>
+                    </DashboardSidebarContent>
                     <DashboardSidebarContent title="Credits">
                         <h3>Made By</h3>
                         <p>Bay Robotics, FRC Team 8840</p>
@@ -448,7 +501,16 @@ class Dashboard extends React.Component {
                             <li><a href="https://github.com/mrdoob/three.js" target="_blank">three.js</a></li>
                             <li><a href="https://reactjs.org/" target="_blank">React</a></li>
                         </ul>
+                        <br/>
+                        <br/>
+                        <a href="https://github.com/google/blockly" target="_blank"><img src="/images/google_blockly_logo.png" width="124px" height="44.75px" /></a>
+                        <br/>
+                        <br/>
+                        <br/>
+                        <br/>
                     </DashboardSidebarContent>
+                    <br/>
+                    <br/>
                 </div>
                 <div className={"dashboard-parent " + (this.state.isOpen ? "" : "dashboard-open-full")} id="dashboard-main">
                     <div className="content-holder">
@@ -456,11 +518,11 @@ class Dashboard extends React.Component {
                             <div className="team-image-parent"><img src="/images/team_logo.svg" width={"275px"} height={"87.5px"} className={"team-image"}/></div>
                             <div className="links">
                                 <div className="links-row">
-                                    <div onClick={this.redirect.bind("/?tab=blocks")} style={{backgroundColor: "#45bfec"}}>Till</div>
+                                    <div onClick={this.redirect.bind("/?tab=home")} style={{backgroundColor: "rgb(212, 88, 88)"}}>Misc</div>
                                     <div onClick={this.redirect.bind("/?tab=path_planner")} style={{backgroundColor: "#39c939"}}>Path Planner</div>
                                 </div>
                                 <div className="links-row">
-                                    <div onClick={this.redirect.bind("/?tab=home")} style={{backgroundColor: "rgb(212, 88, 88)"}}>Home</div>
+                                    <div onClick={this.redirect.bind("/?tab=blocks")} style={{backgroundColor: "#45bfec"}}>Till</div>
                                     <div onClick={this.redirect.bind("/?tab=controls")} style={{backgroundColor: "rgb(212, 73, 195)"}}>Controls</div>
                                 </div>
                                 <div className="links-row">
