@@ -6,7 +6,7 @@
 **Made by Team 8840, Bay Robotics**  
 **Credits to [Jaiden Grimminck](https://github.com/JaidenAGrimminck)**  
 
-[https://frc8840.github.io/8840-app/](https://frc8840.github.io/8840-app/)  
+[https://frc8840.github.io/8840-app/](https://frc8840.github.io/8840-app/) (note: this does not work fully on the web, to see the full version you must download the repository)
 
 ## Overview
 
@@ -16,7 +16,11 @@ This repository contains a react project with an autonomous robot planner, physi
 
 ## How to Run
 
-Unfortunately, it's a bit difficult to run since we don't have a built version online, but you can run it locally. In the future we'll add an online version too, but for now you'll have to download it first.
+Download the repository or clone it, with `git clone https://github.com/frc8840/8840-app`.
+
+Open it, and run `npm install` to install all needed dependencies.
+
+Run with `npm start`.
 
 ## Downloading
 
