@@ -1,5 +1,7 @@
 # 8840-app
 
+**Technical Notebook: [https://github.com/frc8840/8840-app/blob/master/FRC%208840%20-%20Bay%20Robotics%20-%20Technical%20Notebook.pdf](https://github.com/frc8840/8840-app/blob/master/FRC%208840%20-%20Bay%20Robotics%20-%20Technical%20Notebook.pdf)** (same as the one for 8840-utils)
+
 **This project is currently in development.**  
 **Made by Team 8840, Bay Robotics**  
 **Credits to [Jaiden Grimminck](https://github.com/JaidenAGrimminck)**  
