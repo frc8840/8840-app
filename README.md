@@ -10,6 +10,9 @@
 
 Visit the path planner here: [https://frc8840.github.io/8840-app/?tab=path_planner](https://frc8840.github.io/8840-app/?tab=path_planner).
 
+> [!WARNING]
+> Much of this project is out of date, feel free to peruse but this project is __discontinued__.
+
 ## Overview
 
 This project is our team's web dashboard for the First Robotics Competition.
