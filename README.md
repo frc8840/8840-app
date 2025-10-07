@@ -8,6 +8,8 @@
 
 [https://frc8840.github.io/8840-app/](https://frc8840.github.io/8840-app/) (note: this does not work fully on the web, to see the full version you must download the repository)
 
+Visit the path planner here: [https://frc8840.github.io/8840-app/?tab=path_planner](https://frc8840.github.io/8840-app/?tab=path_planner).
+
 ## Overview
 
 This project is our team's web dashboard for the First Robotics Competition.
